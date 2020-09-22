@@ -1,9 +1,5 @@
 
 #TODO
-# trim ssh fingerprint and then use when create VM
-# test can ssh into VM
-# write ID to a file
-# don't build a VM if there is already an ID file - unless check that ID is no longer valid
 # create separate script to delete cluster.  needs ID in a file
 # try and run k3sup on the VM.  does it work?
 # move k3sup to a bash script
@@ -13,6 +9,17 @@
 
 APP_NAME=sample
 # get app name from directory name or deploy file
+
+if [ -f "deploy_state.json" ]; then
+  # TODO should check if VM is still running. file could be old
+  VM_ID=`cat deploy_state.json | jq '.vm_id'`
+  DROPLET_DETAILS=`doctl compute droplet get $VM_ID -o json`
+  DROPLET_STATUS=`echo $DROPLET_DETAILS| jq '.[0].status'`
+  if [ $DROPLET_STATUS == '"active"' ]; then
+    echo "app has already running on droplet $VM_ID.  need to destroy before can create new instance"
+    exit 1
+  fi
+fi
 
 # server name
 # should we add branch name (eg sample-master-cluster)
@@ -30,8 +37,6 @@ else
 fi
 VM_NAME=${APP_NAME}-${BRANCH}cluster
 
-exit
-
 # do setup
 # need API key (or login using doctl)
 # check token there.  otherwise doctl not setup yet
@@ -40,6 +45,15 @@ DO_ACCESS_TOKEN=`cat "${HOME}/Library/Application Support/doctl/config.yaml" | e
 # ssh key in $HOME/.ssh/id_rsa
 SSH_KEYGEN=`ssh-keygen -l -E md5 -f $HOME/.ssh/id_rsa`
 FINGERPRINT=`echo $SSH_KEYGEN | cut -f 2 -d ' '`
+DO_FINGERPRINT=${FINGERPRINT#MD5:}
+# need to check if has been uploaded to DO
+DO_SSH_KEYS=`doctl compute ssh-key list`
+if [[ ${DO_SSH_KEYS} != *${DO_FINGERPRINT}* ]]; then
+  echo "Need to upload SSH key to DO"
+  # new_key_name should be same as $HOME
+  # doctl import new_key_name --public-key-file ~/.ssh/id_rsa.pub
+fi
+
 # do
 VM_IMAGE=ubuntu-20-04-x64
 # doctl compute image list --public | egrep 'ubunut-'
@@ -67,12 +81,12 @@ echo $COUNTRY
 # doctl auth init
 
 # create the VM
-# TODO add --ssh-keys
-RESULT=`doctl compute droplet create $VM_NAME --image $VM_IMAGE --size $VM_SIZE --region $VM_REGION -o json` 
+RESULT=`doctl compute droplet create $VM_NAME --image $VM_IMAGE --size $VM_SIZE --region $VM_REGION --ssh-keys $DO_FINGERPRINT -o json` 
 ERROR=`echo $RESULT | jq '.errors'`
 if [[ -z $ERROR ]]; then
   VM_ID=`echo $RESULT | jq '.[0].id'`
   echo $VM_ID
+  echo "{ \"vm_id\": ${VM_ID} }" > "deploy_state.json"
 else
   echo $RESULT
 fi
@@ -82,5 +96,5 @@ fi
 # fi
 
 # VM_ID=zzz
-
-# doctl compute droplet delete $VM_ID
+# wait for it to be active
+DROPLET_STATE=`doctl compute droplet get 208893003 -o json`
