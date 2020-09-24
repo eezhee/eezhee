@@ -1,9 +1,38 @@
 package main
 
-import "fmt"
+import (
+	"github.com/eezhee/eezhee/cmd"
+)
+
+func generateAppName() string {
+	return "appname"
+}
+
+func getCurrentGitBranch() string {
+
+	// check for .git subdir
+	// this only works in root dir of project (so skip for now)
+
+	// GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+
+	//   if [ $GIT_BRANCH == 'master' ]; then
+	//     BRANCH=''
+	//   else
+	//     BRANCH=${GIT_BRANCH}-
+	//   fi
+	// else
+	//   BRANCH=''
+	// fi
+	// VM_NAME=${APP_NAME}-${BRANCH}cluster
+
+	return "master"
+}
 
 func main() {
 
+	cmd.Execute()
+
+	// is there a deploy
 	// read $HOME/.eezhee/.credentials
 
 	// read deployment file (deploy.yaml)
@@ -39,7 +68,4 @@ func main() {
 	// region
 	// vm size
 
-	// TEARDOWN
-
-	fmt.Print("test")
 }
