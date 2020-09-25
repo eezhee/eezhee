@@ -25,6 +25,20 @@ var buildCmd = &cobra.Command{
 	},
 }
 
+// datacenters: ams2","ams3","blr1","fra1","lon1","nyc1","nyc2","nyc3","sfo1","sfo2","sfo3","sgp1","tor1"
+// sizes:
+//        "512mb","1gb","2gb","4gb","8gb","16gb","32gb","48gb","64gb",
+//        "s-1vcpu-1gb","s-1vcpu-2gb","s-3vcpu-1gb","s-2vcpu-2gb","s-1vcpu-3gb","s-2vcpu-4gb","s-4vcpu-8gb","s-8vcpu-16gb","s-6vcpu-16gb",
+//			  "s-8vcpu-32gb","s-12vcpu-48gb","s-16vcpu-64gb","s-20vcpu-96gb","s-24vcpu-128gb","s-32vcpu-192gb",
+//        "m-16gb","m-32gb","m-64gb","m-128gb","m-224gb",
+//        "m-1vcpu-8gb","m-2vcpu-16gb","m-4vcpu-32gb","m-8vcpu-64gb","m-16vcpu-128gb","m-24vcpu-192gb","m-32vcpu-256gb",
+//				"m3-2vcpu-16gb","m3-4vcpu-32gb","m3-8vcpu-64gb","m3-16vcpu-128gb","m3-24vcpu-192gb","m3-32vcpu-256gb",
+//				"m6-2vcpu-16gb","m6-4vcpu-32gb","m6-8vcpu-64gb","m6-16vcpu-128gb","m6-24vcpu-192gb","m6-32vcpu-256gb"
+//        "c-2","c2-2vcpu-4gb","c-4","c2-4vpcu-8gb","c-8","c2-8vpcu-16gb","c-16","c2-16vcpu-32gb","c-32","c2-32vpcu-64gb",
+// images:  no need as we always want to be on the same plain Ubuntu box
+
+// TODO: the way to manage sizes is on a 3 (or more dimensional plane).  User decides what they want to increase and we figure out the right VM upgrade
+
 // check if doctl is install and we have an auth token
 func validateRequirements() (bool, error) {
 
@@ -47,6 +61,41 @@ func validateRequirements() (bool, error) {
 	return true, nil
 }
 
+type digitalOceanRegionInfo struct {
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+	// Sizes array of strings
+	Available bool `json:"available"`
+	// Features array: private_networking, backups, ipv6, metadata, install_agent, storage, image_transfer
+}
+
+type digitalOceanSizeInfo struct {
+	Slug         string  `json:"slug"`
+	Memory       int     `json:"memory"`
+	VCPUs        string  `json:"vcpus"`
+	Disk         int     `json:"disk"`
+	PriceMonthly float32 `json:"price_monthly"`
+	PriceHourly  float32 `json:"price_hourly"`
+	// Regions
+	Available bool `json:"available"`
+	Transfer  int  `json:"transfer"`
+}
+
+type digitalOceanVMInfo struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Memory    int    `json:"memory"`
+	VCPUs     int    `json:"vcpus"`
+	Status    string `json:"status"`
+	SizeSlug  string `json:"size_slug"`
+	CreatedAt string `json:"created_at"`
+	// Region struct of: slug, name, ...
+	// Image struct of: id, name, distrubution, slug ...
+	// Size struct of: slug, memory, vcpus, disk, price_monthly, price_hourly ...
+	// Networks struct of:
+	// VolumeIDs array of:
+}
+
 func buildVM() bool {
 
 	// is there a deploy state file
@@ -58,14 +107,14 @@ func buildVM() bool {
 	}
 
 	vmName, _ := buildClusterName()
-	fmt.Println(vmName)
+	// fmt.Println(vmName)
 
 	sshFingerprint, err := getSSHFingerprint()
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Println(sshFingerprint)
+	// fmt.Println(sshFingerprint)
 
 	uploaded, err := checkSSHKeyUploaded(sshFingerprint)
 	if !uploaded {
@@ -79,17 +128,31 @@ func buildVM() bool {
 	region := "tor1"
 
 	// time to create the VM
+	var vmInfo []digitalOceanVMInfo
+
 	cmd := exec.Command("doctl", "compute", "droplet", "create", vmName, "--image", imageName, "--size", vmSize, "--region", region, "--ssh-keys", sshFingerprint, "-o", "json")
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Println(stdoutStderr)
+	// fmt.Println(string(stdoutStderr))
 
 	// parse the output
 	// get the ID
 	// save the ID
+	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+
+	// go through each key and see if it matches what is on this machine
+	fmt.Println(vmInfo[0].ID)
+	fmt.Println(vmInfo[0].Status)
+
+	// save to a file using viper??
+
+	// TODO:
+	// return struct
+	// figure out what to save and how
+	// can we create 2 VMs with the same name? if not, check for that error
 
 	return true
 }
@@ -112,7 +175,9 @@ func buildClusterName() (string, error) {
 	} else {
 		clusterName = appName + branchName
 	}
-	// fmt.Println(clusterName)
+
+	// check for invalid characters
+	clusterName = strings.ReplaceAll(clusterName, "_", "-")
 
 	return clusterName, nil
 }
