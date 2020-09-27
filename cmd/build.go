@@ -7,10 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/go-ping/ping"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
+
+const maxPingTime = 750
 
 func init() {
 	rootCmd.AddCommand(buildCmd)
@@ -122,10 +126,11 @@ func buildVM() bool {
 		return false
 	}
 
+	region, err := selectClosestRegion()
+
 	// get directory name
 	imageName := "ubuntu-20-04-x64"
 	vmSize := "s-1vcpu-1gb"
-	region := "tor1"
 
 	// time to create the VM
 	var vmInfo []digitalOceanVMInfo
@@ -155,6 +160,70 @@ func buildVM() bool {
 	// can we create 2 VMs with the same name? if not, check for that error
 
 	return true
+}
+
+type sampleIPAddress struct {
+	region    string
+	ipAddress string
+}
+
+func getPingTime(ipAddress string) (pingTime int64, err error) {
+
+	pinger, err := ping.NewPinger(ipAddress)
+	pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+	pinger.Count = 5
+	pinger.Run()                 // blocks until finished
+	stats := pinger.Statistics() // get send/receive/rtt stats
+
+	pingTime = stats.AvgRtt.Milliseconds()
+
+	return pingTime, nil
+}
+
+type regionPingTimes struct {
+	name      string
+	ipAddress string
+}
+
+func selectClosestRegion() (string, error) {
+
+	sampleIPs := []regionPingTimes{
+		{"ams2", "206.189.240.1"},
+		{"blr1", "143.110.180.2"},
+		{"fra1", "138.68.109.1"},
+		{"lon1", "209.97.176.1"},
+		{"nyc1", "192.241.251.1"},
+		{"sfo1", "198.199.113.1"},
+		{"sgp1", "209.97.160.1"},
+		{"tor1", "68.183.194.1"},
+	}
+
+	// default to NYC
+	var bestRegion = "nyc1" // default to nyc
+
+	// get ping time to each region
+	// to see which is the closest
+	var lowestPingTime = maxPingTime
+	for _, region := range sampleIPs {
+		pingTime, err := getPingTime(region.ipAddress)
+		if err != nil {
+			return "", err
+		}
+		fmt.Println(region.name, ": ", pingTime, "mSec")
+
+		// is this datacenter closer than others we've seen so far
+		if int(pingTime) < lowestPingTime {
+			bestRegion = region.name
+			lowestPingTime = int(pingTime)
+		}
+	}
+
+	return bestRegion, nil
+
 }
 
 // figure out what to call k3s cluster
