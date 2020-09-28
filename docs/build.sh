@@ -1,4 +1,6 @@
 
+# spec on how create VM works
+
 #TODO
 # create separate script to delete cluster.  needs ID in a file
 # try and run k3sup on the VM.  does it work?
