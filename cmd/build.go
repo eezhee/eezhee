@@ -14,6 +14,7 @@ import (
 	"github.com/go-ping/ping"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const maxPingTime = 750
@@ -67,14 +68,14 @@ func validateRequirements() (bool, error) {
 	return true, nil
 }
 
-func buildVM() bool {
+func buildVM() (bool, error) {
 
 	// is there a deploy state file
 
 	haveRequirements, err := validateRequirements()
 	if !haveRequirements {
 		fmt.Println(err)
-		return false
+		return false, err
 	}
 
 	vmName, _ := buildClusterName()
@@ -83,14 +84,14 @@ func buildVM() bool {
 	sshFingerprint, err := getSSHFingerprint()
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return false, err
 	}
 	// fmt.Println(sshFingerprint)
 
 	uploaded, err := checkSSHKeyUploaded(sshFingerprint)
 	if !uploaded {
 		fmt.Println(err)
-		return false
+		return false, err
 	}
 
 	region, err := selectClosestRegion()
@@ -109,29 +110,37 @@ func buildVM() bool {
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return false, err
 	}
 	// fmt.Println(string(stdoutStderr))
 
-	// parse the output
-	// get the ID
-	// save the ID
+	// parse the json output
 	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
 
-	// go through each key and see if it matches what is on this machine
+	// get the ID
 	fmt.Println(vmInfo[0].ID)
 	fmt.Println(vmInfo[0].Status)
 
-	// save to a file using viper??
-	// ipaddress
-	// region
-	// size
+	// save key details in state file
+	stateFile := viper.New()
+	stateFile.SetConfigName("deploy-state.yaml")
+	stateFile.SetConfigFile("./deploy-state.yaml")
+	// stateFile.SetConfigType("yaml")
+	stateFile.AddConfigPath(".")
 
-	// TODO:
-	// return struct
-	// figure out what to save and how
+	stateFile.Set("cloud", "digitalocean")
+	stateFile.Set("region", vmInfo[0].Region.Slug)
+	stateFile.Set("name", vmInfo[0].Name)
+	stateFile.Set("id", vmInfo[0].ID)
+	stateFile.Set("size", vmInfo[0].SizeSlug)
+	// if new VM, don't normally have IP address yet
+	// viper.Set("ip", vmInfo[0].Networks.V4Info[0].IPAddress)
+	stateFile.WriteConfig()
+	// stateFile.WriteConfigAs("./deploy-state.yaml")
 
-	return true
+	// do we want to wait until the VM is ready so we can grab the IP address?
+
+	return true, nil
 }
 
 type sampleIPAddress struct {
