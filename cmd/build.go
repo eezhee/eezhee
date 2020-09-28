@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eezhee/eezhee/pkg/digitalocean"
+
 	"github.com/go-ping/ping"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -65,41 +67,6 @@ func validateRequirements() (bool, error) {
 	return true, nil
 }
 
-type digitalOceanRegionInfo struct {
-	Slug string `json:"slug"`
-	Name string `json:"name"`
-	// Sizes array of strings
-	Available bool `json:"available"`
-	// Features array: private_networking, backups, ipv6, metadata, install_agent, storage, image_transfer
-}
-
-type digitalOceanSizeInfo struct {
-	Slug         string  `json:"slug"`
-	Memory       int     `json:"memory"`
-	VCPUs        string  `json:"vcpus"`
-	Disk         int     `json:"disk"`
-	PriceMonthly float32 `json:"price_monthly"`
-	PriceHourly  float32 `json:"price_hourly"`
-	// Regions
-	Available bool `json:"available"`
-	Transfer  int  `json:"transfer"`
-}
-
-type digitalOceanVMInfo struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Memory    int    `json:"memory"`
-	VCPUs     int    `json:"vcpus"`
-	Status    string `json:"status"`
-	SizeSlug  string `json:"size_slug"`
-	CreatedAt string `json:"created_at"`
-	// Region struct of: slug, name, ...
-	// Image struct of: id, name, distrubution, slug ...
-	// Size struct of: slug, memory, vcpus, disk, price_monthly, price_hourly ...
-	// Networks struct of:
-	// VolumeIDs array of:
-}
-
 func buildVM() bool {
 
 	// is there a deploy state file
@@ -133,9 +100,12 @@ func buildVM() bool {
 	vmSize := "s-1vcpu-1gb"
 
 	// time to create the VM
-	var vmInfo []digitalOceanVMInfo
+	var vmInfo []digitalocean.VMInfo
 
-	cmd := exec.Command("doctl", "compute", "droplet", "create", vmName, "--image", imageName, "--size", vmSize, "--region", region, "--ssh-keys", sshFingerprint, "-o", "json")
+	//TODO: add tags '--tag-names' such as 'eezhee' 'userName'
+	cmd := exec.Command("doctl", "compute", "droplet", "create", vmName,
+		"--image", imageName, "--size", vmSize, "--region", region, "--ssh-keys", sshFingerprint,
+		"--tag-name", "eezhee", "-o", "json")
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
@@ -153,11 +123,13 @@ func buildVM() bool {
 	fmt.Println(vmInfo[0].Status)
 
 	// save to a file using viper??
+	// ipaddress
+	// region
+	// size
 
 	// TODO:
 	// return struct
 	// figure out what to save and how
-	// can we create 2 VMs with the same name? if not, check for that error
 
 	return true
 }
@@ -213,7 +185,7 @@ func selectClosestRegion() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		fmt.Println(region.name, ": ", pingTime, "mSec")
+		// fmt.Println(region.name, ": ", pingTime, "mSec")
 
 		// is this datacenter closer than others we've seen so far
 		if int(pingTime) < lowestPingTime {
@@ -223,7 +195,6 @@ func selectClosestRegion() (string, error) {
 	}
 
 	return bestRegion, nil
-
 }
 
 // figure out what to call k3s cluster
