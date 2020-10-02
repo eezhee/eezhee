@@ -111,7 +111,9 @@ func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
 
 func buildVM() (bool, error) {
 
-	k3s.GetVersions()
+	k3sReleases := k3s.GetVersions()
+	fmt.Println(k3sReleases)
+	// TODO: need to choose which one we want
 
 	// is there a deploy state file
 

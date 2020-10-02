@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -98,29 +99,102 @@ func install() bool {
 	return true
 }
 
-func getVersionUsingREST() bool {
-	// curl -H "User-agent: eezhee" https://api.github.com/repos/rancher/k3s/releases
+func makeAPIRequest(apiURL string) (data []byte, headers http.Header, err error) {
 
-	// TODO: need to set User-Agent and Accept??
+	// setup api request
+	request, err := http.NewRequest("GET", apiURL, nil)
+	request.Header.Add("User-agent", "eezhee")
+	request.Header.Add("Accept", "application/vnd.github.v3+json")
 
-	request, err := http.NewRequest("GET", "https://api.github.com/repos/rancher/k3s/releases", nil)
+	// make the api request
 	client := &http.Client{Timeout: time.Second * 10}
 	response, err := client.Do(request)
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
+		return data, headers, err
 	}
 	defer response.Body.Close()
-	data, _ := ioutil.ReadAll(response.Body)
-	fmt.Println(string(data))
 
-	// json parse
-	var releases []GithubRelease
+	// get relase data
+	data, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		return data, headers, err
+	}
 
-	json.Unmarshal([]byte(data), &releases)
+	// get headers
+	headers = response.Header
 
-	fmt.Println(len(releases))
-	fmt.Println(releases[0])
-	return true
+	return data, headers, err
+}
+
+func getVersionUsingREST() []string {
+
+	var k3sReleases []string
+
+	apiURL := "https://api.github.com/repos/rancher/k3s/releases?page=1&per_page=100"
+
+	for len(apiURL) > 0 {
+		data, headers, err := makeAPIRequest(apiURL)
+		if err != nil {
+			return nil
+		}
+
+		// following headers are available if we need them
+		// header := response.Header.Get("ETag")
+		// header = response.Header.Get("Cache-Control")
+		// header = response.Header.Get("Bla")
+		// header = response.Header.Get("X-Github-Media-Type")
+		// header = response.Header.Get("X-RateLimit-Limit")
+		// header = response.Header.Get("X-RateLimit-Remaining")
+		// header = response.Header.Get("X-RateLimit-Reset")
+
+		// extract the release data
+		// format: v1.17.1-alpha1+k3s1  (note releases before 2020 have different format)
+		var releases []GithubRelease
+
+		json.Unmarshal([]byte(data), &releases)
+		fmt.Println(len(releases))
+		for _, release := range releases {
+			tagName := release.TagName
+			// releaseName := release.Name  		// older releases have this blank
+
+			// parse release name
+			fields := strings.Split(tagName, "+")
+			// releaseParts[1] should always be 'k3s1'
+			releaseParts := strings.Split(fields[0], "-")
+			if len(releaseParts) == 1 {
+				// only want final releases
+
+				// ideally want to sort into streams   1.16, 1.17, etc
+				// split by major.minor
+				k3sReleases = append(k3sReleases, releaseParts[0])
+
+			} else {
+				// ignore non-final releases
+				// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
+			}
+		}
+
+		apiURL = ""
+
+		// see if there are more releases
+		linkHeader := headers.Get("Link")
+		links := strings.Split(linkHeader, ",")
+		for _, linkInfo := range links {
+			linkFields := strings.Split(linkInfo, ";")
+			link := linkFields[0]
+			linkType := strings.TrimSpace(linkFields[1])
+
+			if strings.Compare(linkType, "rel=\"next\"") == 0 {
+				fmt.Println(link)
+				apiURL = strings.Trim(link, "<>")
+			}
+		}
+
+	}
+
+	// return an map with 'major release' as key
+	return k3sReleases
 }
 
 // GetVersions will return a list of k3s versions that can be downloaded
@@ -181,7 +255,7 @@ func getVersionsUsingGraphQL() bool {
 }
 
 // GetVersions of K3S that are available
-func GetVersions() bool {
+func GetVersions() []string {
 	return getVersionUsingREST()
 }
 
