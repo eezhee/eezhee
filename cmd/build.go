@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -68,6 +69,45 @@ func validateRequirements() (bool, error) {
 	return true, nil
 }
 
+func getVMInfo(vmID int) ([]digitalocean.VMInfo, error) {
+
+	var vmInfo []digitalocean.VMInfo
+
+	// get the latest VM info.  see if status active now
+	getCmd := exec.Command("doctl", "compute", "droplet", "get", strconv.Itoa(vmID), "-o", "json")
+	stdoutStderr, err := getCmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(string(stdoutStderr))
+		return vmInfo, err
+	}
+
+	// parse the json output
+	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+
+	return vmInfo, nil
+}
+
+func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
+
+	// go through all network and find which one is public
+	numNetworks := len(vmInfo.Networks.V4Info)
+
+	for i := 0; i < numNetworks; i++ {
+
+		networkType := vmInfo.Networks.V4Info[i].Type
+
+		if strings.Compare(networkType, "public") == 0 {
+			publicIP := vmInfo.Networks.V4Info[i].IPAddress
+			return publicIP, nil
+		}
+
+	}
+
+	// did not find public IP
+	return publicIP, errors.New("VM does not have public IP")
+}
+
 func buildVM() (bool, error) {
 
 	// is there a deploy state file
@@ -109,17 +149,32 @@ func buildVM() (bool, error) {
 		"--tag-name", "eezhee", "-o", "json")
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println(string(stdoutStderr))
 		fmt.Println(err)
 		return false, err
 	}
-	// fmt.Println(string(stdoutStderr))
+	fmt.Println("vm is being built")
 
 	// parse the json output
 	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
 
-	// get the ID
-	fmt.Println(vmInfo[0].ID)
-	fmt.Println(vmInfo[0].Status)
+	vmID := vmInfo[0].ID
+	status := vmInfo[0].Status
+
+	// see if vm ready.  if not need to wait as don't have IP yet
+	for strings.Compare(status, "active") != 0 {
+
+		// wait a bit
+		time.Sleep(2 * time.Second)
+		vmInfo, err = getVMInfo(vmID)
+		if err != nil {
+			fmt.Println(err)
+			// TODO: vm has been created, really should delete (or should we add retry to getVMInfo?)
+			return false, err
+		}
+		status = vmInfo[0].Status
+	}
+	fmt.Println("vm now ready to use")
 
 	// save key details in state file
 	stateFile := viper.New()
@@ -133,12 +188,23 @@ func buildVM() (bool, error) {
 	stateFile.Set("name", vmInfo[0].Name)
 	stateFile.Set("id", vmInfo[0].ID)
 	stateFile.Set("size", vmInfo[0].SizeSlug)
-	// if new VM, don't normally have IP address yet
-	// viper.Set("ip", vmInfo[0].Networks.V4Info[0].IPAddress)
+	publicIP, err := getVMPublicIP(vmInfo[0])
+	// if err != nil {
+	// should never happen - if here, but in DO API
+	// }
+	stateFile.Set("ip", publicIP)
 	stateFile.WriteConfig()
 	// stateFile.WriteConfigAs("./deploy-state.yaml")
 
-	// do we want to wait until the VM is ready so we can grab the IP address?
+	// make sure k3sup is installed
+	// `which k3sup`
+	// if not, install using brew
+	// `brew install k3sup`
+
+	// run k3sup
+	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
+
+	// add k3s tag to VM
 
 	return true, nil
 }
