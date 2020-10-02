@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/digitalocean"
+	"github.com/eezhee/eezhee/pkg/k3s"
 
 	"github.com/go-ping/ping"
 	homedir "github.com/mitchellh/go-homedir"
@@ -109,6 +110,8 @@ func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
 }
 
 func buildVM() (bool, error) {
+
+	k3s.GetVersions()
 
 	// is there a deploy state file
 
