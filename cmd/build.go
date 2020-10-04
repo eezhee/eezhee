@@ -113,7 +113,10 @@ func buildVM() (bool, error) {
 
 	// is there a deploy state file
 
+	// convert k3s into an object that can remember the versions that are valid
+	// then can
 	// see which version of k3s to install
+
 	k3sReleases, err := k3s.GetVersions()
 	if err != nil {
 		return false, err
@@ -205,7 +208,7 @@ func buildVM() (bool, error) {
 	// stateFile.WriteConfigAs("./deploy-state.yaml")
 
 	// see which version of k3s to install
-	k3sReleases, err := k3s.GetVersions()
+	k3sReleases, err = k3s.GetVersions()
 	if err != nil {
 		return false, err
 	}

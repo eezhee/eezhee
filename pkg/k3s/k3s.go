@@ -28,6 +28,7 @@ import (
 
 // Version of k3s
 type Version struct {
+	Track   string
 	Major   string
 	Minor   string
 	Release string
@@ -152,7 +153,7 @@ func Install() bool {
 	}
 
 	// now run k3sup bla bla
-	fmt.Println("here is where we should k3sup on the VM we created")
+	fmt.Println("here is where we should run k3sup on the VM we created")
 
 	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
 	// need ip, name of ssh key, user
@@ -162,9 +163,14 @@ func Install() bool {
 
 func parseVersion(versionStr string) (version Version, err error) {
 
-	version.Major = "1"
-	version.Minor = "19"
-	version.Release = "1"
+	// v1.19.2
+	versionParts := strings.Split(versionStr, ".")
+
+	version.Major = versionParts[0]
+	version.Major = version.Major[1:len(version.Major)]
+	version.Minor = versionParts[1]
+	version.Release = versionParts[2]
+	version.Track = version.Major + "." + version.Minor
 
 	return version, err
 }
@@ -172,7 +178,7 @@ func parseVersion(versionStr string) (version Version, err error) {
 // GetVersions of K3S that are available
 func GetVersions() (map[string][]string, error) {
 
-	var k3sReleases map[string][]string
+	k3sReleases := make(map[string][]string)
 
 	releases, err := github.GetRepoReleases("rancher", "k3s")
 	if err != nil {
@@ -192,12 +198,19 @@ func GetVersions() (map[string][]string, error) {
 		releaseParts := strings.Split(fields[0], "-")
 		if len(releaseParts) == 1 {
 			// only want final releases
+			fullVersion := releaseParts[0]
+			version, err := parseVersion(fullVersion)
+			if err != nil {
+				// skip this version
+				fmt.Printf("could not parse version %s\n", fullVersion)
+			}
 
-			// ideally want to sort into streams   1.16, 1.17, etc
-			// split by major.minor
-			var majorMinorVersion = "1.19"
-
-			k3sReleases[majorMinorVersion] = append(k3sReleases[majorMinorVersion], releaseParts[0])
+			// sort into streams   1.16, 1.17, etc
+			// ignore version before 1.16
+			// note versions in each track will be in desending order (ie 1.19.2, 1.19.1)
+			if strings.Compare(version.Track, "1.16") >= 0 {
+				k3sReleases[version.Track] = append(k3sReleases[version.Track], fullVersion)
+			}
 
 		} else {
 			// ignore non-final releases
