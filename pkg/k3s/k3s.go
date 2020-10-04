@@ -1,5 +1,16 @@
 package k3s
 
+import (
+	"fmt"
+	"net/http"
+	"os/exec"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/eezhee/eezhee/pkg/github"
+)
+
 // notes:
 //   looks like the github graphql api needs an auth token, no matter which data you query
 //   the REST API allows some the tags endpoint to be queried without an auth token
@@ -15,183 +26,184 @@ package k3s
 
 //    run k3sup with --k3s-version
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-	"time"
+// Version of k3s
+type Version struct {
+	Major   string
+	Minor   string
+	Release string
+}
 
-	"github.com/eezhee/eezhee/pkg/github"
-)
-
+// checkRequirements will see if k3sup is already installed
 func checkRequirements() bool {
+
+	if runtime.GOOS == "windows" {
+		fmt.Println("tool does not support windows yet")
+		return false
+	}
+
+	// is brew installed?
+	cmd := exec.Command("which", "brew")
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		// brew not installed
+		fmt.Println(string(stdoutStderr))
+		fmt.Println("brew not installed. Check https://brew.sh for instructions")
+		return false
+	}
+
+	return true
+}
+
+// setupK3sup will make sure k3sup on machine
+func setupK3sup() bool {
+
 	// see if k3sup installed
-	// see if k3sup is the latest version
-	// can we install it (brew install k3sup)
-	return true
-}
+	cmd := exec.Command("which", "k3sup")
+	_, err := cmd.CombinedOutput()
+	if err != nil {
 
-// install k3s using k3sup
-func install() bool {
-	return true
-}
-
-func getVersionUsingREST() []string {
-
-	var k3sReleases []string
-
-	apiURL := "https://api.github.com/repos/rancher/k3s/releases?page=1&per_page=100"
-
-	for len(apiURL) > 0 {
-		data, headers, err := github.MakeAPIRequest(apiURL)
+		// not installed, so let's try and install
+		cmd := exec.Command("brew", "install", "k3sup")
+		stdoutStderr, err := cmd.CombinedOutput()
 		if err != nil {
-			return nil
+			fmt.Printf("could not install k3sup: %s\n", stdoutStderr)
+			return false
 		}
 
-		// following headers are available if we need them
-		// header := response.Header.Get("ETag")
-		// header = response.Header.Get("Cache-Control")
-		// header = response.Header.Get("Bla")
-		// header = response.Header.Get("X-Github-Media-Type")
-		// header = response.Header.Get("X-RateLimit-Limit")
-		// header = response.Header.Get("X-RateLimit-Remaining")
-		// header = response.Header.Get("X-RateLimit-Reset")
-
-		// extract the release data
-		// format: v1.17.1-alpha1+k3s1  (note releases before 2020 have different format)
-		var releases []github.Release
-
-		json.Unmarshal([]byte(data), &releases)
-		fmt.Println(len(releases))
-		for _, release := range releases {
-			tagName := release.TagName
-			// releaseName := release.Name  		// older releases have this blank
-
-			// parse release name
-			fields := strings.Split(tagName, "+")
-			// releaseParts[1] should always be 'k3s1'
-			releaseParts := strings.Split(fields[0], "-")
-			if len(releaseParts) == 1 {
-				// only want final releases
-
-				// ideally want to sort into streams   1.16, 1.17, etc
-				// split by major.minor
-				k3sReleases = append(k3sReleases, releaseParts[0])
-
-			} else {
-				// ignore non-final releases
-				// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
-			}
-		}
-
-		apiURL = ""
-
-		// see if there are more releases
-		linkHeader := headers.Get("Link")
-		links := strings.Split(linkHeader, ",")
-		for _, linkInfo := range links {
-			linkFields := strings.Split(linkInfo, ";")
-			link := linkFields[0]
-			linkType := strings.TrimSpace(linkFields[1])
-
-			if strings.Compare(linkType, "rel=\"next\"") == 0 {
-				fmt.Println(link)
-				apiURL = strings.Trim(link, "<>")
-			}
-		}
-
+		// k3sup now installed
 	}
 
-	// return an map with 'major release' as key
-	return k3sReleases
-}
-
-// GetVersions will return a list of k3s versions that can be downloaded
-func getVersionsUsingGraphQL() bool {
-
-	// need to use github api
-	// note, we will be unauthenticated and have a rate limit of 60/hour
-
-	jsonData := map[string]string{
-		"query": `
-					{ 
-						rateLimit {
-							limit
-							cost
-							remaining
-							resetAt
-						}					
-						repository(owner:"rancher", name: "k3s") {
-							refs(refPrefix: "refs/tags/", last: 1) {
-								nodes {
-									repository {
-										releases(first:1, orderBy: {field: CREATED_AT, direction: DESC}) {
-											nodes {
-												name
-												createdAt
-												url
-												releaseAssets(last: 4) {
-													nodes {
-														name
-														downloadCount
-														downloadUrl
-													}
-												}	
-											}
-										}		
-									}
-								}
-							}
-						}
-					}
-			`,
+	// get k3sup version
+	cmd = exec.Command("k3sup", "version")
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		// oopps, there is a k3sup but not working properly
+		fmt.Println("k3sup not working properly.  Please reinstall")
+		return false
 	}
-	jsonValue, _ := json.Marshal(jsonData)
-	request, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewBuffer(jsonValue))
+	k3supOutput := string(stdoutStderr)
+
+	// parse and extract version
+	var installedVersion = ""
+	lines := strings.Split(k3supOutput, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "Version") {
+			fields := strings.Split(line, ":")
+			installedVersion = strings.TrimSpace(fields[1])
+		}
+	}
+	if strings.Compare(installedVersion, "") == 0 {
+		fmt.Println("could not get version of installed k3sup")
+		return false
+	}
+	fmt.Printf("installed version: %s\n", installedVersion)
+
+	// get current verison
+	// request latest, github will redirect to specific version
+	request, err := http.NewRequest("GET", "https://github.com/alexellis/k3sup/releases/latest", nil)
 	client := &http.Client{Timeout: time.Second * 10}
 	response, err := client.Do(request)
+	// defer response.Body.Close()
 	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
+		fmt.Printf("could not get latest version of k3sup: %s\n", err)
+		return false
 	}
-	defer response.Body.Close()
-	data, _ := ioutil.ReadAll(response.Body)
-	fmt.Println(string(data))
+	finalURL := response.Request.URL.Path
+	fields := strings.Split(finalURL, "/")
+	latestVersion := fields[len(fields)-1]
+	fmt.Printf("latest version: %s\n", latestVersion)
 
-	// need parse json that came back
-	fmt.Println("Please format response")
+	// compare our version to latest
+	result := strings.Compare(installedVersion, latestVersion)
+	if result < 0 {
+		fmt.Printf("newer version of k3sup (%s) available\n", latestVersion)
+		fmt.Printf("using brew to upgrade k3sup\n")
+
+		// this could take a while
+		// brew upgrade k3sup
+		cmd = exec.Command("brew", "upgrade", "k3sup")
+		stdoutStderr, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("brew could not upgrade k3sup: %s\n", stdoutStderr)
+			return false
+		}
+		// now have latest k3sup
+
+	} else if result > 0 {
+		// our version is newer than what is on github
+		// should never happen (so we will ignore)
+	} else {
+		// have the latest version
+	}
 
 	return true
+}
+
+// Install k3s using k3sup
+func Install() bool {
+
+	// make sure we have brew
+	if !checkRequirements() {
+		return false
+	}
+
+	if !setupK3sup() {
+		// could not install/update k3sup
+	}
+
+	// now run k3sup bla bla
+	fmt.Println("here is where we should k3sup on the VM we created")
+
+	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
+	// need ip, name of ssh key, user
+
+	return true
+}
+
+func parseVersion(versionStr string) (version Version, err error) {
+
+	version.Major = "1"
+	version.Minor = "19"
+	version.Release = "1"
+
+	return version, err
 }
 
 // GetVersions of K3S that are available
-func GetVersions() []string {
-	return getVersionUsingREST()
-}
+func GetVersions() (map[string][]string, error) {
 
-// {
-//   repository(owner: "rancher", name: "k3s") {
-//     refs(refPrefix: "refs/tags/", last: 10) {
-//       nodes {
-//         repository {
-//           releases(first: 10, orderBy: {field: CREATED_AT, direction: DESC}) {
-//             nodes {
-//               name
-//               createdAt
-//               url
-//               releaseAssets(last: 10) {
-//                 nodes {
-//                   name
-//                   downloadCount
-//                   downloadUrl
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
+	var k3sReleases map[string][]string
+
+	releases, err := github.GetRepoReleases("rancher", "k3s")
+	if err != nil {
+		return nil, err
+	}
+
+	// go through releases and filter out any non-final (non-RC) releases
+	for _, release := range releases {
+
+		// check tag name.  note, can't use 'releaseName' as is blank for older releases (pre-2020)
+		tagName := release.TagName
+		// releaseName := release.Name  		// older releases have this blank
+
+		// parse release name
+		fields := strings.Split(tagName, "+")
+		// releaseParts[1] should always be 'k3s1'
+		releaseParts := strings.Split(fields[0], "-")
+		if len(releaseParts) == 1 {
+			// only want final releases
+
+			// ideally want to sort into streams   1.16, 1.17, etc
+			// split by major.minor
+			var majorMinorVersion = "1.19"
+
+			k3sReleases[majorMinorVersion] = append(k3sReleases[majorMinorVersion], releaseParts[0])
+
+		} else {
+			// ignore non-final releases
+			// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
+		}
+	}
+
+	return k3sReleases, nil
+}

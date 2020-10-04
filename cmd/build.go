@@ -111,11 +111,14 @@ func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
 
 func buildVM() (bool, error) {
 
-	k3sReleases := k3s.GetVersions()
-	fmt.Println(k3sReleases)
-	// TODO: need to choose which one we want
-
 	// is there a deploy state file
+
+	// see which version of k3s to install
+	k3sReleases, err := k3s.GetVersions()
+	if err != nil {
+		return false, err
+	}
+	fmt.Println(k3sReleases)
 
 	haveRequirements, err := validateRequirements()
 	if !haveRequirements {
@@ -201,13 +204,14 @@ func buildVM() (bool, error) {
 	stateFile.WriteConfig()
 	// stateFile.WriteConfigAs("./deploy-state.yaml")
 
-	// make sure k3sup is installed
-	// `which k3sup`
-	// if not, install using brew
-	// `brew install k3sup`
+	// see which version of k3s to install
+	k3sReleases, err := k3s.GetVersions()
+	if err != nil {
+		return false, err
+	}
+	fmt.Println(k3sReleases)
 
-	// run k3sup
-	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
+	k3s.Install()
 
 	// add k3s tag to VM
 
