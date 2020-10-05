@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
+	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,11 +27,17 @@ var teardownCmd = &cobra.Command{
 func teardownVM() {
 	// see if there is a state file so we know what we're supposed to teardown
 
-	// read deploy.state
-	viper.SetConfigName("deploy-state")
-	viper.SetConfigFile("./deploy-state.yaml")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	deployFile := new(config.StateFile)
+
+	// TODO really want to check for existance 1st
+
+	_, err := deployFile.Load()
+	if err != nil {
+		fmt.Println("error reading state file")
+		return
+	}
+
+	cloud := deployFile.Cloud
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -42,31 +48,29 @@ func teardownVM() {
 		return
 	}
 
-	cloud := viper.GetString("cloud")
+	// see which cloud cluster created on
+	cloud := deployFile.Cloud
 	if strings.Compare(cloud, "digitalocean") != 0 {
 		fmt.Println("state file reference cloud we don't support: ", cloud)
 		return
 	}
 
+	manager := digitalocean.NewManager()
+
 	// get details of VM
-	ID := viper.GetInt("id")
+	ID := deployFile.ID
 	if ID == 0 {
 		fmt.Println("invalid VM ID:", ID, ".  Can no teardown VM")
 		return
 	}
 
-	manager := digitalocean.NewManager()
+	// ready to delete the cluster
 	err := manager.DeleteVM(ID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	// remove deploy.yaml
-	err = os.Remove("./deploy-state.yaml")
-	if err != nil {
-		fmt.Println("could not remove deploy-state.yaml file")
-		fmt.Println(err)
-	}
+	deployFile.Delete()
 
 }

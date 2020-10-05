@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
 
@@ -30,6 +31,7 @@ var buildCmd = &cobra.Command{
 	},
 }
 
+// TODO move to digitalocean struct!!
 func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
 
 	// go through all network and find which one is public
@@ -50,9 +52,19 @@ func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
 	return publicIP, errors.New("VM does not have public IP")
 }
 
+// buildVM will create a cluster
 func buildVM() (bool, error) {
 
+	// make sure the cluster doesn't already exist
 	// is there a deploy state file
+	var deployFile config.StateFile
+	if deployFile.Exists() {
+		return false, errors.New("cluster already running (as per deploy-state file)")
+	}
+
+	// nope, so we are clear to create a new cluster
+
+	// is there a deploy config file
 
 	// create a name for cluster based on project & branch name
 	vmName, _ := buildClusterName()

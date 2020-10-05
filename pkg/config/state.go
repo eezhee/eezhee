@@ -7,21 +7,22 @@ import (
 	"github.com/spf13/viper"
 )
 
-// DeployFile has details of how to deploy the cluster
-type DeployFile struct {
+// StateFile has details of the deploy-state file for a cluster
+type StateFile struct {
 	Cloud string // which cloud cluster was create in
+	ID    int    // ID of the VM cluster is on
 }
 
-// Exists checks if a deploy config file exists in current directory
-func (s *DeployFile) Exists() bool {
+// Exists checks if a deploy-state file exists in current directory
+func (s *StateFile) Exists() bool {
 	return false
 }
 
 // Load a given deploy state file
-func (s *DeployFile) Load() error {
+func (s *StateFile) Load() error {
 
-	viper.SetConfigName("deploy")
-	viper.SetConfigFile("./deploy.yaml")
+	viper.SetConfigName("deploy-state")
+	viper.SetConfigFile("./deploy-state.yaml")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 
@@ -29,7 +30,7 @@ func (s *DeployFile) Load() error {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			fmt.Println("nothing to teardown as no state file found")
 		} else {
-			fmt.Println("error reading deploy file")
+			fmt.Println("error reading state file")
 		}
 		return err
 	}
@@ -38,13 +39,13 @@ func (s *DeployFile) Load() error {
 }
 
 // Save details of a deploy to the deploy-state file
-func (s *DeployFile) Save() error {
+func (s *StateFile) Save() error {
 
 	return nil
 }
 
 // Delete the deploy state file
-func (s *DeployFile) Delete() error {
+func (s *StateFile) Delete() error {
 
 	// remove deploy.yaml
 	err := os.Remove("./deploy-state.yaml")
