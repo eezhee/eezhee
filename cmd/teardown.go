@@ -3,10 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"strconv"
 	"strings"
 
+	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -56,16 +55,12 @@ func teardownVM() {
 		return
 	}
 
-	// doctl compute droplet delete id
-	cmd := exec.Command("doctl", "compute", "droplet", "delete", strconv.Itoa(ID), "--force", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
+	manager := digitalocean.NewManager()
+	err := manager.DeleteVM(ID)
 	if err != nil {
-		fmt.Println(string(stdoutStderr))
 		fmt.Println(err)
 		return
 	}
-
-	fmt.Println(string(stdoutStderr))
 
 	// remove deploy.yaml
 	err = os.Remove("./deploy-state.yaml")

@@ -23,8 +23,10 @@ var versionsCmd = &cobra.Command{
 
 func getK3sVersions() error {
 
+	k3sManager := k3s.NewManager()
+
 	// get the possible versions
-	releaseVersions, err := k3s.GetVersions()
+	releaseVersions, err := k3sManager.GetVersions()
 	if err != nil {
 		return err
 	}

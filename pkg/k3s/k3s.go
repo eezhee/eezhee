@@ -37,7 +37,7 @@ type Version struct {
 
 // Manager will handle installation of k3s
 type Manager struct {
-	k3sReleases map[string][]string // list of available k3s versions, groups by track (ie 1.19)
+	Releases map[string][]string // list of available k3s versions, groups by track (ie 1.19)
 
 	// we should cache versions. only update if call GetVersions
 	// maybe we do the 'latest' trick to see if changed
@@ -72,7 +72,7 @@ func parseVersion(versionStr string) (version Version, err error) {
 // GetVersions of K3S that are available
 func (m *Manager) GetVersions() (map[string][]string, error) {
 
-	m.k3sReleases = make(map[string][]string)
+	m.Releases = make(map[string][]string)
 
 	releases, err := github.GetRepoReleases("rancher", "k3s")
 	if err != nil {
@@ -103,7 +103,7 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 			// ignore version before 1.16
 			// note versions in each track will be in desending order (ie 1.19.2, 1.19.1)
 			if strings.Compare(version.Track, "1.16") >= 0 {
-				m.k3sReleases[version.Track] = append(m.k3sReleases[version.Track], fullVersion)
+				m.Releases[version.Track] = append(m.Releases[version.Track], fullVersion)
 			}
 
 		} else {
@@ -112,7 +112,17 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 		}
 	}
 
-	return m.k3sReleases, nil
+	return m.Releases, nil
+}
+
+// GetLatestVersion of k3s that can be installed
+func (m *Manager) GetLatestVersion() (latestRelease string) {
+
+	for track := range m.Releases {
+		latestRelease = m.Releases[track][0]
+	}
+
+	return latestRelease
 }
 
 // CheckRequirements will make sure required components are installed

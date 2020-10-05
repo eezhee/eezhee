@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/digitalocean"
@@ -23,19 +21,16 @@ var listCmd = &cobra.Command{
 	},
 }
 
-func listVMs() error {
+func listVMs() bool {
 
-	// get a list of VMs running on DO
-	cmd := exec.Command("doctl", "compute", "droplet", "list", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
+	manager := digitalocean.NewManager()
+
+	// get all VMs in our account
+	vmInfo, err := manager.ListVMs()
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return false
 	}
-
-	// parse the json output
-	var vmInfo []digitalocean.VMInfo
-	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
 
 	// go through all VMs and look for VMs that are tagged with 'eezhee'
 	for i := range vmInfo {
@@ -49,5 +44,5 @@ func listVMs() error {
 		}
 	}
 
-	return nil
+	return true
 }
