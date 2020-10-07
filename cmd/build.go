@@ -15,7 +15,6 @@ import (
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func init() {
@@ -57,17 +56,28 @@ func buildVM() (bool, error) {
 
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
-	var deployFile config.StateFile
-	if deployFile.Exists() {
+	deployState := config.NewDeployState()
+	if deployState.FileExists() {
 		return false, errors.New("cluster already running (as per deploy-state file)")
 	}
 
 	// nope, so we are clear to create a new cluster
 
 	// is there a deploy config file
+	deployConfig := config.NewDeployConfig()
+	if deployConfig.FileExists() {
+		err := deployConfig.Load()
+		if err != nil {
+			// there is a file but we couldn't load it
+			fmt.Println(err)
+			return false, err
+		}
+	}
 
-	// create a name for cluster based on project & branch name
-	vmName, _ := buildClusterName()
+	// set name for cluster - default to project & branch name
+	if len(deployConfig.Name) == 0 {
+		deployConfig.Name, _ = buildClusterName()
+	}
 
 	// get ssh key we will use to login to new VM
 	sshFingerprint, err := getSSHFingerprint()
@@ -97,9 +107,16 @@ func buildVM() (bool, error) {
 	}
 
 	// set rest of details for new VM
-	region, err := DOManager.SelectClosestRegion()
+	if len(deployConfig.Region) == 0 {
+		deployConfig.Region, err = DOManager.SelectClosestRegion()
+		if err != nil {
+			return false, err
+		}
+	}
+	if len(deployConfig.Size) == 0 {
+		deployConfig.Size = "s-1vcpu-1gb"
+	}
 	imageName := "ubuntu-20-04-x64"
-	vmSize := "s-1vcpu-1gb"
 
 	// vm := DOManager.CreateVM()
 
@@ -107,8 +124,8 @@ func buildVM() (bool, error) {
 	var vmInfo []digitalocean.VMInfo
 
 	//TODO: add tags '--tag-names' such as 'eezhee' 'userName'
-	cmd := exec.Command("doctl", "compute", "droplet", "create", vmName,
-		"--image", imageName, "--size", vmSize, "--region", region, "--ssh-keys", sshFingerprint,
+	cmd := exec.Command("doctl", "compute", "droplet", "create", deployConfig.Name,
+		"--image", imageName, "--size", deployConfig.Size, "--region", deployConfig.Region, "--ssh-keys", sshFingerprint,
 		"--tag-name", "eezhee", "-o", "json")
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
@@ -140,24 +157,17 @@ func buildVM() (bool, error) {
 	fmt.Println("vm now ready to use")
 
 	// save key details in state file
-	stateFile := viper.New()
-	stateFile.SetConfigName("deploy-state.yaml")
-	stateFile.SetConfigFile("./deploy-state.yaml")
-	// stateFile.SetConfigType("yaml")
-	stateFile.AddConfigPath(".")
-
-	stateFile.Set("cloud", "digitalocean")
-	stateFile.Set("region", vmInfo[0].Region.Slug)
-	stateFile.Set("name", vmInfo[0].Name)
-	stateFile.Set("id", vmInfo[0].ID)
-	stateFile.Set("size", vmInfo[0].SizeSlug)
+	deployState.Cloud = "digitalocean"
+	deployState.ID = vmInfo[0].ID
+	deployState.Name = vmInfo[0].Name
+	deployState.Region = vmInfo[0].Region.Slug
+	deployState.Size = vmInfo[0].SizeSlug
 	publicIP, err := getVMPublicIP(vmInfo[0])
 	// if err != nil {
 	// should never happen - if here, but in DO API
 	// }
-	stateFile.Set("ip", publicIP)
-	stateFile.WriteConfig()
-	// stateFile.WriteConfigAs("./deploy-state.yaml")
+	deployState.IP = publicIP
+	deployState.Save()
 
 	// time to install k3s on the new VM
 	k3sManager.Install()

@@ -22,3 +22,17 @@ To delete the VM once you don't need it anymore, use:
 ```bash
 ./eezhee teardown
 ```
+
+## Development
+
+To build the binary
+
+```bash
+go build
+```
+
+To run the tests use the following
+
+```bash
+go test ./...
+```
