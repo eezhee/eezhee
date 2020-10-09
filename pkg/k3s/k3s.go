@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/eezhee/eezhee/pkg/github"
 	homedir "github.com/mitchellh/go-homedir"
@@ -27,8 +26,6 @@ import (
 //      build latest version of k3s
 //      build specific version of k3s
 //      check if there is a newer version of a stream (ie 1.18)
-
-//    run k3sup with --k3s-version
 
 // Version of k3s
 type Version struct {
@@ -146,125 +143,25 @@ func (m *Manager) CheckRequirements() (bool, error) {
 	return true, nil
 }
 
-// setupK3sup will make sure k3sup on machine
-func setupK3sup() bool {
-
-	// see if k3sup installed
-	cmd := exec.Command("which", "k3sup")
-	_, err := cmd.CombinedOutput()
-	if err != nil {
-
-		// not installed, so let's try and install
-		cmd := exec.Command("brew", "install", "k3sup")
-		stdoutStderr, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("could not install k3sup: %s\n", stdoutStderr)
-			return false
-		}
-
-		// k3sup now installed
-	}
-
-	// get k3sup version
-	cmd = exec.Command("k3sup", "version")
-	stdoutStderr, err := cmd.CombinedOutput()
-	if err != nil {
-		// oopps, there is a k3sup but not working properly
-		fmt.Println("k3sup not working properly.  Please reinstall")
-		return false
-	}
-	k3supOutput := string(stdoutStderr)
-
-	// parse and extract version
-	var installedVersion = ""
-	lines := strings.Split(k3supOutput, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "Version") {
-			fields := strings.Split(line, ":")
-			installedVersion = strings.TrimSpace(fields[1])
-		}
-	}
-	if strings.Compare(installedVersion, "") == 0 {
-		fmt.Println("could not get version of installed k3sup")
-		return false
-	}
-	fmt.Printf("installed version: %s\n", installedVersion)
-
-	// get current verison
-	// request latest, github will redirect to specific version
-	request, err := http.NewRequest("GET", "https://github.com/alexellis/k3sup/releases/latest", nil)
-	client := &http.Client{Timeout: time.Second * 10}
-	response, err := client.Do(request)
-	// defer response.Body.Close()
-	if err != nil {
-		fmt.Printf("could not get latest version of k3sup: %s\n", err)
-		return false
-	}
-	finalURL := response.Request.URL.Path
-	fields := strings.Split(finalURL, "/")
-	latestVersion := fields[len(fields)-1]
-	fmt.Printf("latest version: %s\n", latestVersion)
-
-	// compare our version to latest
-	result := strings.Compare(installedVersion, latestVersion)
-	if result < 0 {
-		fmt.Printf("newer version of k3sup (%s) available\n", latestVersion)
-		fmt.Printf("using brew to upgrade k3sup\n")
-
-		// this could take a while
-		// brew upgrade k3sup
-		cmd = exec.Command("brew", "upgrade", "k3sup")
-		stdoutStderr, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("brew could not upgrade k3sup: %s\n", stdoutStderr)
-			return false
-		}
-		// now have latest k3sup
-
-	} else if result > 0 {
-		// our version is newer than what is on github
-		// should never happen (so we will ignore)
-	} else {
-		// have the latest version
-	}
-
-	return true
-}
-
-// Install k3s using k3sup
-func (m *Manager) Install(ipAddress string) bool {
-
-	// won't need brew if we don't use k3sup
-
-	// // make sure we have brew
-	// _, err := m.CheckRequirements()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return false
-	// }
-
-	// if !setupK3sup() {
-	// 	// could not install/update k3sup
-	// }
+// Install k3s on given VM
+func (m *Manager) Install(ipAddress string, k3sVersion string) bool {
 
 	user := "root"
 	sshPort := 22
 
 	// build install command
-	k3sVersion := "1.18.2"
-	k3sExtraArgs := ""
-	clusterStr := ""
-	installk3sExec := fmt.Sprintf("INSTALL_K3S_EXEC='server %s --tls-san %s %s'", clusterStr, ipAddress, strings.TrimSpace(k3sExtraArgs))
-	installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | %s INSTALL_K3S_VERSION='%s' sh -\n", installk3sExec, k3sVersion)
-	fmt.Println(installK3scommand)
+
+	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
+	// installk3sExec := fmt.Sprintf("INSTALL_K3S_EXEC='server %s --tls-san %s %s'", clusterStr, ipAddress, strings.TrimSpace(k3sExtraArgs))
+	// installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | sh -\n", installk3sExec, k3sVersion)
+	installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | INSTALL_K3S_VERSION=%s sh -\n", k3sVersion)
+	// fmt.Println(installK3scommand)
 
 	// get the private sshkey
+	// TODO: should support ssh agent & passphrases
 	keyFile := "~/.ssh/id_rsa"
 	sshPrivateKeyFile, _ := homedir.Expand(keyFile)
-	// strings.Join([]string{os.Getenv("HOME"), ".ssh", "id_rsa"})
 	passphrase := ""
-
-	// TODO: should support ssh agent & passphrases
 
 	signer, err := getSSHKey(sshPrivateKeyFile, passphrase)
 	if err != nil {
@@ -287,75 +184,70 @@ func (m *Manager) Install(ipAddress string) bool {
 		return false
 	}
 
-	sess, err := conn.NewSession()
+	// install k3s on the VM
+	output, err := runCommand(conn, installK3scommand)
 	if err != nil {
 		fmt.Println(err)
+		fmt.Println(output)
 		return false
 	}
-	defer sess.Close()
-
-	// now run k3sup bla bla
-	fmt.Println("here is where we should run k3sup on the VM we created")
-
-	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
-	// need ip, name of ssh key, user
+	// fmt.Println(output)
 
 	// get kubectl config
-	sudoPrefix := ""
-	command := fmt.Sprintf(sudoPrefix + "cat /etc/rancher/k3s/k3s.yaml\n")
-	fmt.Println(command)
-
-	// sess.CombinedOutput(installK3scommand)
-	output, err := sess.CombinedOutput(command)
+	getK3sConfigCommand := "cat /etc/rancher/k3s/k3s.yaml\n"
+	output, err = runCommand(conn, getK3sConfigCommand)
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println(string(output))
 		return false
 	}
-	fmt.Println(string(output))
+	// fmt.Println(string(output))
 
-	// don't need code below unless unhappy with CombinedOutput.
+	// need to update kubeconfig so works outside the VM
+	// IP address needs to be set to external IP
+	// also rename context to something other than 'default'
+	context := "appname"
 
-	// sessStdOut, err := sess.StdoutPipe()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return false
-	// }
+	configUpdater := strings.NewReplacer(
+		"127.0.0.1", ipAddress,
+		"localhost", ipAddress,
+		"default", context,
+	)
+	kubectlConfig := configUpdater.Replace(output)
 
-	// output := bytes.Buffer{}
+	fmt.Println(kubectlConfig)
 
-	// wg := sync.WaitGroup{}
-
-	// stdOutWriter := io.MultiWriter(os.Stdout, &output)
-	// wg.Add(1)
-	// go func() {
-	// 	io.Copy(stdOutWriter, sessStdOut)
-	// 	wg.Done()
-	// }()
-	// sessStderr, err := sess.StderrPipe()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return false
-	// }
-
-	// errorOutput := bytes.Buffer{}
-	// stdErrWriter := io.MultiWriter(os.Stderr, &errorOutput)
-	// wg.Add(1)
-	// go func() {
-	// 	io.Copy(stdErrWriter, sessStderr)
-	// 	wg.Done()
-	// }()
-
-	// err = sess.Run(command)
-
-	// wg.Wait()
-
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return false
-	// }
+	// save output to kubectrl config file
+	// TODO: option to merge?
+	absPath, _ := filepath.Abs("kubeconfig")
+	err = ioutil.WriteFile(absPath, []byte(kubectlConfig), 0600)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
 
 	return true
+}
+
+func runCommand(conn *ssh.Client, command string) (outputStr string, err error) {
+
+	sess, err := conn.NewSession()
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	defer sess.Close()
+
+	output, err := sess.CombinedOutput(command)
+	outputStr = string(output)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(outputStr)
+		return outputStr, err
+	}
+	fmt.Println(outputStr)
+
+	return outputStr, nil
 }
 
 // getSshKey
