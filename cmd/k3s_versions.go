@@ -13,7 +13,7 @@ func init() {
 }
 
 var versionsCmd = &cobra.Command{
-	Use:   "versions",
+	Use:   "k3s_versions",
 	Short: "List the versions of k3s that can be used",
 	Long:  `Will check the k3s repo on github and get a list of all the releases available`,
 	Run: func(cmd *cobra.Command, args []string) {

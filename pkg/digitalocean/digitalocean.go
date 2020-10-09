@@ -246,6 +246,49 @@ func (m *Manager) GetVMInfo(vmID int) ([]VMInfo, error) {
 	return vmInfo, nil
 }
 
+// GetPublicIP for the VM
+func (v *VMInfo) GetPublicIP() (publicIP string, err error) {
+
+	// go through all network and find which one is public
+	numNetworks := len(v.Networks.V4Info)
+
+	for i := 0; i < numNetworks; i++ {
+
+		networkType := v.Networks.V4Info[i].Type
+
+		if strings.Compare(networkType, "public") == 0 {
+			publicIP := v.Networks.V4Info[i].IPAddress
+			return publicIP, nil
+		}
+
+	}
+
+	// did not find public IP
+	return publicIP, errors.New("VM does not have public IP")
+}
+
+// CreateVM will create a new VM
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) ([]VMInfo, error) {
+
+	var vmInfo []VMInfo
+
+	// create the vm
+	cmd := exec.Command("doctl", "compute", "droplet", "create", name,
+		"--image", image, "--size", size, "--region", region, "--ssh-keys", sshFingerprint,
+		"--tag-name", "eezhee", "-o", "json")
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(stdoutStderr))
+		fmt.Println(err)
+		return vmInfo, err
+	}
+
+	// parse the json output
+	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+
+	return vmInfo, nil
+}
+
 // ListVMs will return a list of all VMs created by eezhee
 func (m *Manager) ListVMs() (vmInfo []VMInfo, err error) {
 
@@ -297,9 +340,4 @@ func (m *Manager) DeleteVM(ID int) error {
 // ComputeDropletCreate will create a new VM
 func ComputeDropletCreate() (vmInfo VMInfo, err error) {
 	return vmInfo, err
-}
-
-// ComputeDropletList will return info on VMs created by Eezhee
-func ComputeDropletList() error {
-	return nil
 }

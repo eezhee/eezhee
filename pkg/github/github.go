@@ -123,7 +123,6 @@ func GetRepoReleases(owner string, repo string) (repoReleases []Release, err err
 			linkType := strings.TrimSpace(linkFields[1])
 
 			if strings.Compare(linkType, "rel=\"next\"") == 0 {
-				fmt.Println(link)
 				apiURL = strings.Trim(link, "<>")
 			}
 		}

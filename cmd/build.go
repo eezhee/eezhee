@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -28,27 +27,6 @@ var buildCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		buildVM()
 	},
-}
-
-// TODO move to digitalocean struct!!
-func getVMPublicIP(vmInfo digitalocean.VMInfo) (publicIP string, err error) {
-
-	// go through all network and find which one is public
-	numNetworks := len(vmInfo.Networks.V4Info)
-
-	for i := 0; i < numNetworks; i++ {
-
-		networkType := vmInfo.Networks.V4Info[i].Type
-
-		if strings.Compare(networkType, "public") == 0 {
-			publicIP := vmInfo.Networks.V4Info[i].IPAddress
-			return publicIP, nil
-		}
-
-	}
-
-	// did not find public IP
-	return publicIP, errors.New("VM does not have public IP")
 }
 
 // buildVM will create a cluster
@@ -86,11 +64,6 @@ func buildVM() (bool, error) {
 		return false, err
 	}
 
-	// figure out which version of k3s to install
-	k3sManager := k3s.NewManager()
-	k3sVersion := k3sManager.GetLatestVersion()
-	fmt.Println(k3sVersion)
-
 	// make sure we can talk to DigitalOcean
 	DOManager := digitalocean.NewManager()
 	haveRequirements, err := DOManager.CheckRequirements()
@@ -118,25 +91,8 @@ func buildVM() (bool, error) {
 	}
 	imageName := "ubuntu-20-04-x64"
 
-	// vm := DOManager.CreateVM()
-
 	// time to create the VM
-	var vmInfo []digitalocean.VMInfo
-
-	//TODO: add tags '--tag-names' such as 'eezhee' 'userName'
-	cmd := exec.Command("doctl", "compute", "droplet", "create", deployConfig.Name,
-		"--image", imageName, "--size", deployConfig.Size, "--region", deployConfig.Region, "--ssh-keys", sshFingerprint,
-		"--tag-name", "eezhee", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(stdoutStderr))
-		fmt.Println(err)
-		return false, err
-	}
-	fmt.Println("vm is being built")
-
-	// parse the json output
-	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	vmInfo, err := DOManager.CreateVM(deployConfig.Name, imageName, deployConfig.Size, deployConfig.Region, sshFingerprint)
 
 	vmID := vmInfo[0].ID
 	status := vmInfo[0].Status
@@ -162,12 +118,17 @@ func buildVM() (bool, error) {
 	deployState.Name = vmInfo[0].Name
 	deployState.Region = vmInfo[0].Region.Slug
 	deployState.Size = vmInfo[0].SizeSlug
-	publicIP, err := getVMPublicIP(vmInfo[0])
+	publicIP, err := vmInfo[0].GetPublicIP()
 	// if err != nil {
 	// should never happen - if here, but in DO API
 	// }
 	deployState.IP = publicIP
 	deployState.Save()
+
+	// figure out which version of k3s to install
+	k3sManager := k3s.NewManager()
+	k3sVersion := k3sManager.GetLatestVersion()
+	fmt.Println(k3sVersion)
 
 	// time to install k3s on the new VM
 	k3sManager.Install()

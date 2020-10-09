@@ -1,15 +1,22 @@
 package k3s
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/github"
+	homedir "github.com/mitchellh/go-homedir"
+	"golang.org/x/crypto/ssh"
 )
 
 // notes:
@@ -231,16 +238,66 @@ func setupK3sup() bool {
 // Install k3s using k3sup
 func (m *Manager) Install() bool {
 
-	// make sure we have brew
-	_, err := m.CheckRequirements()
+	// won't need brew if we don't use k3sup
+
+	// // make sure we have brew
+	// _, err := m.CheckRequirements()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return false
+	// }
+
+	// if !setupK3sup() {
+	// 	// could not install/update k3sup
+	// }
+
+	user := "root"
+	ipAddress := "192.168.0.1"
+	sshPort := 22
+
+	// build install command
+	k3sVersion := "1.18.2"
+	k3sExtraArgs := ""
+	clusterStr := ""
+	installk3sExec := fmt.Sprintf("INSTALL_K3S_EXEC='server %s --tls-san %s %s'", clusterStr, ipAddress, strings.TrimSpace(k3sExtraArgs))
+	installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | %s INSTALL_K3S_VERSION='%s' sh -\n", installk3sExec, k3sVersion)
+	fmt.Println(installK3scommand)
+
+	// get the private sshkey
+	keyFile := "~/.ssh/id_rsa"
+	sshPrivateKeyFile, _ := homedir.Expand(keyFile)
+	// strings.Join([]string{os.Getenv("HOME"), ".ssh", "id_rsa"})
+	passphrase := ""
+
+	// TODO: should support ssh agent & passphrases
+
+	signer, err := getSSHKey(sshPrivateKeyFile, passphrase)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
+	}
+
+	// connect to the server
+	config := &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	address := fmt.Sprintf("%s:%d", ipAddress, sshPort)
+	conn, err := ssh.Dial("tcp", address, config)
+	if err != nil {
 		return false
 	}
 
-	if !setupK3sup() {
-		// could not install/update k3sup
+	sess, err := conn.NewSession()
+	if err != nil {
+		return false
 	}
+
+	defer sess.Close()
+	sess.CombinedOutput(installK3scommand)
+	defer sess.Close()
 
 	// now run k3sup bla bla
 	fmt.Println("here is where we should run k3sup on the VM we created")
@@ -248,5 +305,65 @@ func (m *Manager) Install() bool {
 	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
 	// need ip, name of ssh key, user
 
+	// get kubectl config
+	sudoPrefix := ""
+	command := fmt.Sprintf(sudoPrefix + "cat /etc/rancher/k3s/k3s.yaml\n")
+	fmt.Println(command)
+
+	sessStdOut, err := sess.StdoutPipe()
+	if err != nil {
+		return false
+	}
+
+	output := bytes.Buffer{}
+
+	wg := sync.WaitGroup{}
+
+	stdOutWriter := io.MultiWriter(os.Stdout, &output)
+	wg.Add(1)
+	go func() {
+		io.Copy(stdOutWriter, sessStdOut)
+		wg.Done()
+	}()
+	sessStderr, err := sess.StderrPipe()
+	if err != nil {
+		return false
+	}
+
+	errorOutput := bytes.Buffer{}
+	stdErrWriter := io.MultiWriter(os.Stderr, &errorOutput)
+	wg.Add(1)
+	go func() {
+		io.Copy(stdErrWriter, sessStderr)
+		wg.Done()
+	}()
+
+	err = sess.Run(command)
+
+	wg.Wait()
+
+	if err != nil {
+		return false
+	}
+
 	return true
+}
+
+// getSshKey
+func getSSHKey(keyFilename string, passphrase string) (signer ssh.Signer, err error) {
+
+	// load the private key
+	privateKey, err := ioutil.ReadFile(keyFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	// decode the key
+	if passphrase != "" {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(privateKey, []byte(passphrase))
+	} else {
+		signer, err = ssh.ParsePrivateKey(privateKey)
+	}
+
+	return signer, err
 }
