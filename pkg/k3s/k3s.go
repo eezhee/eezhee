@@ -236,7 +236,7 @@ func setupK3sup() bool {
 }
 
 // Install k3s using k3sup
-func (m *Manager) Install() bool {
+func (m *Manager) Install(ipAddress string) bool {
 
 	// won't need brew if we don't use k3sup
 
@@ -252,7 +252,6 @@ func (m *Manager) Install() bool {
 	// }
 
 	user := "root"
-	ipAddress := "192.168.0.1"
 	sshPort := 22
 
 	// build install command
@@ -273,7 +272,8 @@ func (m *Manager) Install() bool {
 
 	signer, err := getSSHKey(sshPrivateKeyFile, passphrase)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return false
 	}
 
 	// connect to the server
@@ -287,16 +287,15 @@ func (m *Manager) Install() bool {
 	address := fmt.Sprintf("%s:%d", ipAddress, sshPort)
 	conn, err := ssh.Dial("tcp", address, config)
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 
 	sess, err := conn.NewSession()
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
-
-	defer sess.Close()
-	sess.CombinedOutput(installK3scommand)
 	defer sess.Close()
 
 	// now run k3sup bla bla
@@ -310,8 +309,12 @@ func (m *Manager) Install() bool {
 	command := fmt.Sprintf(sudoPrefix + "cat /etc/rancher/k3s/k3s.yaml\n")
 	fmt.Println(command)
 
+	// sess.CombinedOutput(installK3scommand)
+	sess.CombinedOutput(command)
+
 	sessStdOut, err := sess.StdoutPipe()
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 
@@ -327,6 +330,7 @@ func (m *Manager) Install() bool {
 	}()
 	sessStderr, err := sess.StderrPipe()
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 
@@ -343,6 +347,7 @@ func (m *Manager) Install() bool {
 	wg.Wait()
 
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 

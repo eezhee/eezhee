@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,19 +24,22 @@ var buildCmd = &cobra.Command{
 	Short: "Print the version number of Eezhee",
 	Long:  `All software has versions. This is Eezhee's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		buildVM()
+		buildCluster()
 	},
 }
 
 // buildVM will create a cluster
-func buildVM() (bool, error) {
+func buildCluster() (bool, error) {
 
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
 	deployState := config.NewDeployState()
-	if deployState.FileExists() {
-		return false, errors.New("cluster already running (as per deploy-state file)")
-	}
+	// TEMP: just for debugging
+	// if deployState.FileExists() {
+	// 	fmt.Println("cluster already running (as per deploy-state file)")
+	// 	return false, errors.New("cluster already running (as per deploy-state file)")
+	// }
+	deployState.Load()
 
 	// nope, so we are clear to create a new cluster
 
@@ -51,6 +53,13 @@ func buildVM() (bool, error) {
 			return false, err
 		}
 	}
+
+	k3sManager := k3s.NewManager()
+	k3sVersion := k3sManager.GetLatestVersion()
+	fmt.Println(k3sVersion)
+
+	// time to install k3s on the new VM
+	k3sManager.Install(deployState.IP)
 
 	// set name for cluster - default to project & branch name
 	if len(deployConfig.Name) == 0 {
@@ -126,12 +135,12 @@ func buildVM() (bool, error) {
 	deployState.Save()
 
 	// figure out which version of k3s to install
-	k3sManager := k3s.NewManager()
-	k3sVersion := k3sManager.GetLatestVersion()
-	fmt.Println(k3sVersion)
+	// k3sManager := k3s.NewManager()
+	// k3sVersion := k3sManager.GetLatestVersion()
+	// fmt.Println(k3sVersion)
 
-	// time to install k3s on the new VM
-	k3sManager.Install()
+	// // time to install k3s on the new VM
+	// k3sManager.Install()
 	// k3sManager.Install(latestRelease)
 
 	// add k3s tag to VM
