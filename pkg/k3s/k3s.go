@@ -1,17 +1,13 @@
 package k3s
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/github"
@@ -310,46 +306,54 @@ func (m *Manager) Install(ipAddress string) bool {
 	fmt.Println(command)
 
 	// sess.CombinedOutput(installK3scommand)
-	sess.CombinedOutput(command)
-
-	sessStdOut, err := sess.StdoutPipe()
+	output, err := sess.CombinedOutput(command)
 	if err != nil {
 		fmt.Println(err)
+		fmt.Println(string(output))
 		return false
 	}
+	fmt.Println(string(output))
 
-	output := bytes.Buffer{}
+	// don't need code below unless unhappy with CombinedOutput.
 
-	wg := sync.WaitGroup{}
+	// sessStdOut, err := sess.StdoutPipe()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return false
+	// }
 
-	stdOutWriter := io.MultiWriter(os.Stdout, &output)
-	wg.Add(1)
-	go func() {
-		io.Copy(stdOutWriter, sessStdOut)
-		wg.Done()
-	}()
-	sessStderr, err := sess.StderrPipe()
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
+	// output := bytes.Buffer{}
 
-	errorOutput := bytes.Buffer{}
-	stdErrWriter := io.MultiWriter(os.Stderr, &errorOutput)
-	wg.Add(1)
-	go func() {
-		io.Copy(stdErrWriter, sessStderr)
-		wg.Done()
-	}()
+	// wg := sync.WaitGroup{}
 
-	err = sess.Run(command)
+	// stdOutWriter := io.MultiWriter(os.Stdout, &output)
+	// wg.Add(1)
+	// go func() {
+	// 	io.Copy(stdOutWriter, sessStdOut)
+	// 	wg.Done()
+	// }()
+	// sessStderr, err := sess.StderrPipe()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return false
+	// }
 
-	wg.Wait()
+	// errorOutput := bytes.Buffer{}
+	// stdErrWriter := io.MultiWriter(os.Stderr, &errorOutput)
+	// wg.Add(1)
+	// go func() {
+	// 	io.Copy(stdErrWriter, sessStderr)
+	// 	wg.Done()
+	// }()
 
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
+	// err = sess.Run(command)
+
+	// wg.Wait()
+
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return false
+	// }
 
 	return true
 }
