@@ -54,19 +54,6 @@ func buildCluster() (bool, error) {
 		}
 	}
 
-	k3sManager := k3s.NewManager()
-	k3sVersion := k3sManager.GetLatestVersion()
-	fmt.Println(k3sVersion)
-
-	// really want the latest version of a channel
-	// latest/stable/v1.18
-	// https://update.k3s.io/v1-release/channels
-	// then want to see if our version if most recent.  if not allow upgrade
-
-	// time to install k3s on the new VM
-	k3sVersion = "v1.18.2+k3s1"
-	k3sManager.Install(deployState.IP, k3sVersion)
-
 	// set name for cluster - default to project & branch name
 	if len(deployConfig.Name) == 0 {
 		deployConfig.Name, _ = buildClusterName()
@@ -126,6 +113,22 @@ func buildCluster() (bool, error) {
 		status = vmInfo[0].Status
 	}
 	fmt.Println("vm now ready to use")
+
+	// install k3s on the VM
+	k3sManager := k3s.NewManager()
+	k3sChannels, err := k3sManager.GetChannels()
+	k3sVersion, _ := k3sManager.GetLatestVersion(k3sChannels[0])
+
+	// really want the latest version of a channel
+	// latest/stable/v1.18
+	// https://update.k3s.io/v1-release/channels
+	// then want to see if our version if most recent.  if not allow upgrade
+
+	// time to install k3s on the new VM
+	version := "v" + k3sVersion + "+k3s1"
+	k3sManager.Install(deployState.IP, version)
+
+	// done, cluster up and running
 
 	// save key details in state file
 	deployState.Cloud = "digitalocean"
