@@ -27,7 +27,6 @@ brew update eezhee
 
 Eezhee needs your PC to have DigitalOcean's CLI [`doctl`](https://www.digitalocean.com/docs/apis-clis/doctl/) installed and setup with an API token. If you have already been using DigitalOcean, you probably already have this done.  If not, you can find instructions [here](https://www.digitalocean.com/docs/apis-clis/doctl/how-to/install/)
 
-
 ## Usage
 
 To see what commands Eezhee supports, type:
