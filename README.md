@@ -61,7 +61,7 @@ If you use Eezhee in several projects, it can be hard to keep track of how many 
 
 Note, if you want to delete a given cluster, you need to switch to the corresponding project directory. See the note regarding the `deploy-state.yaml` file in the Delete command notes
 
-### List Supported Kubernetes Versions 
+### List Supported Kubernetes Versions
 
 If you want to configure your cluster to use a specific version of kubernetes, you can use the `list' command.  This will list each major version and each of the releases availalbe.
 
@@ -78,16 +78,12 @@ When you create a cluster, Eezhee will look in the current directory to see if t
 Currently you can set:
 
 - Size
-- Region.  Defaults to the closest region.  You can set it to any of DigitalOceans regions.  The list of possible values includes: 
+- Region.  Defaults to the closest region.  You can set it to any of DigitalOceans regions.  The list of possible values includes:
 
 ### Deploy State File
 
-You can 
+You can
 certain parameters, you can create a `deploy.yaml` file
-
-// use the following to see details about the VM created
-cat ./deploy-state.yaml
-```
 
 To delete the VM once you don't need it anymore, use:
 
