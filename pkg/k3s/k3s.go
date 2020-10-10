@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -38,23 +37,17 @@ type Version struct {
 // Manager will handle installation of k3s
 type Manager struct {
 	Releases map[string][]string // list of available k3s versions, groups by track (ie 1.19)
-
-	// we should cache versions. only update if call GetVersions
-	// maybe we do the 'latest' trick to see if changed
-	// http://github.com/rancher/k3s/releases/latest
 }
 
 // NewManager will create a new k3s manager
 func NewManager() *Manager {
 	m := new(Manager)
 
-	// pre-fetch list of versions we can install
-	m.GetVersions()
-
 	return m
 }
 
-// parse a given version string into its components
+// parseVersion will take a given version string into parse into its components
+// currently support version in the following format: v1.19.2
 func parseVersion(versionStr string) (version Version, err error) {
 
 	// v1.19.2
@@ -71,6 +64,11 @@ func parseVersion(versionStr string) (version Version, err error) {
 
 // GetVersions of K3S that are available
 func (m *Manager) GetVersions() (map[string][]string, error) {
+
+	// see if we already have the versions list
+	if m.Releases != nil {
+		return m.Releases, nil
+	}
 
 	m.Releases = make(map[string][]string)
 
@@ -115,14 +113,36 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 	return m.Releases, nil
 }
 
-// GetLatestVersion of k3s that can be installed
-func (m *Manager) GetLatestVersion() (latestRelease string) {
+// GetChannels returns array of all valid channel names
+func (m *Manager) GetChannels() (channels []string, err error) {
 
-	for track := range m.Releases {
-		latestRelease = m.Releases[track][0]
+	// make sure we have the list of versions
+	if m.Releases == nil {
+		m.GetVersions()
 	}
 
-	return latestRelease
+	// go throgh all channels and build a list of all their names
+	for channel := range m.Releases {
+		channels = append(channels, channel)
+	}
+
+	return channels, nil
+
+}
+
+// GetLatestVersion of k3s that is available for a given channel
+func (m *Manager) GetLatestVersion(channel string) (latestRelease string, err error) {
+
+	// is channel valid
+	_, exists := m.Releases[channel]
+	if !exists {
+		return "", errors.New("invalid channel name")
+	}
+
+	// get a list of tracks to see which is the
+	latestRelease = m.Releases[channel][0]
+
+	return latestRelease, nil
 }
 
 // CheckRequirements will make sure required components are installed
@@ -130,14 +150,6 @@ func (m *Manager) CheckRequirements() (bool, error) {
 
 	if runtime.GOOS == "windows" {
 		return false, errors.New("tool does not support windows yet")
-	}
-
-	// is brew installed?
-	cmd := exec.Command("which", "brew")
-	_, err := cmd.CombinedOutput()
-	if err != nil {
-		// brew not installed
-		return false, errors.New("brew not installed. check https://brew.sh for instructions")
 	}
 
 	return true, nil
@@ -150,10 +162,6 @@ func (m *Manager) Install(ipAddress string, k3sVersion string) bool {
 	sshPort := 22
 
 	// build install command
-
-	// `k3sup install --ip $IP --ssh-key $KEY --user ubuntu`
-	// installk3sExec := fmt.Sprintf("INSTALL_K3S_EXEC='server %s --tls-san %s %s'", clusterStr, ipAddress, strings.TrimSpace(k3sExtraArgs))
-	// installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | sh -\n", installk3sExec, k3sVersion)
 	installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | INSTALL_K3S_VERSION=%s sh -\n", k3sVersion)
 	// fmt.Println(installK3scommand)
 
