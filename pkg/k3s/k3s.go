@@ -104,7 +104,7 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 				m.Releases[version.Track] = append(m.Releases[version.Track], fullVersion)
 			}
 
-		} else {
+			// } else {
 			// ignore non-final releases
 			// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
 		}

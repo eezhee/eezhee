@@ -65,7 +65,10 @@ func teardownVM() error {
 		return err
 	}
 
-	deployStateFile.Delete()
+	err = deployStateFile.Delete()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

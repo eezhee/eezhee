@@ -109,9 +109,7 @@ func GetRepoReleases(owner string, repo string) (repoReleases []Release, err err
 		}
 
 		// add each release to array that will be returned
-		for _, release := range releases {
-			repoReleases = append(repoReleases, release)
-		}
+		repoReleases = append(repoReleases, releases...)
 
 		// reset API URL - will only set again if there are more pages to load
 		apiURL = ""
@@ -180,7 +178,7 @@ func GetVersionUsingREST() []string {
 				// split by major.minor
 				k3sReleases = append(k3sReleases, releaseParts[0])
 
-			} else {
+				// } else {
 				// ignore non-final releases
 				// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
 			}
