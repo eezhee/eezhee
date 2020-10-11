@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/eezhee/eezhee/pkg/k3s"
@@ -17,7 +18,11 @@ var versionsCmd = &cobra.Command{
 	Short: "List the versions of k3s that can be used",
 	Long:  `Will check the k3s repo on github and get a list of all the releases available`,
 	Run: func(cmd *cobra.Command, args []string) {
-		getK3sVersions()
+		err := getK3sVersions()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 

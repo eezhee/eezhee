@@ -98,7 +98,9 @@ func buildCluster() error {
 
 	// time to create the VM
 	vmInfo, err := DOManager.CreateVM(deployConfig.Name, imageName, deployConfig.Size, deployConfig.Region, sshFingerprint)
-
+	if err != nil {
+		return err
+	}
 	vmID := vmInfo[0].ID
 	status := vmInfo[0].Status
 
@@ -119,6 +121,9 @@ func buildCluster() error {
 	// install k3s on the VM
 	k3sManager := k3s.NewManager()
 	k3sChannels, err := k3sManager.GetChannels()
+	if err != nil {
+		return err
+	}
 	k3sVersion, _ := k3sManager.GetLatestVersion(k3sChannels[0])
 
 	// really want the latest version of a channel
@@ -139,9 +144,10 @@ func buildCluster() error {
 	deployState.Region = vmInfo[0].Region.Slug
 	deployState.Size = vmInfo[0].SizeSlug
 	publicIP, err := vmInfo[0].GetPublicIP()
-	// if err != nil {
-	// should never happen - if here, but in DO API
-	// }
+	if err != nil {
+		return err
+		// should never happen - if here, but in DO API
+	}
 	deployState.IP = publicIP
 	err = deployState.Save()
 	if err != nil {
