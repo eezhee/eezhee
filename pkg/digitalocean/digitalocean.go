@@ -149,7 +149,7 @@ func (m *Manager) CheckSSHKeyUploaded(fingerprint string) (bool, error) {
 		return false, err
 	}
 
-	err := json.Unmarshal([]byte(stdoutStderr), &sshKeys)
+	err = json.Unmarshal([]byte(stdoutStderr), &sshKeys)
 	if err != nil {
 		return false, err
 	}
@@ -184,7 +184,7 @@ func getPingTime(ipAddress string) (pingTime int64, err error) {
 		return 0, err
 	}
 	pinger.Count = 5
-	err := pinger.Run() // blocks until finished
+	err = pinger.Run() // blocks until finished
 	if err != nil {
 		return 0, err
 	}
@@ -247,7 +247,7 @@ func (m *Manager) GetVMInfo(vmID int) ([]VMInfo, error) {
 	}
 
 	// parse the json output
-	err := json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	err = json.Unmarshal([]byte(stdoutStderr), &vmInfo)
 	if err != nil {
 		return vmInfo, err
 	}
@@ -293,7 +293,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	}
 
 	// parse the json output
-	err := json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	err = json.Unmarshal([]byte(stdoutStderr), &vmInfo)
 	if err != nil {
 		return vmInfo, err
 	}
