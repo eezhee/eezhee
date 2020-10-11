@@ -1,7 +1,6 @@
 package github
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -205,61 +204,61 @@ func GetVersionUsingREST() []string {
 }
 
 // GetVersions will return a list of k3s versions that can be downloaded
-func getVersionsUsingGraphQL() bool {
+// func getVersionsUsingGraphQL() bool {
 
-	// need to use github api
-	// note, we will be unauthenticated and have a rate limit of 60/hour
+// 	// need to use github api
+// 	// note, we will be unauthenticated and have a rate limit of 60/hour
 
-	jsonData := map[string]string{
-		"query": `
-					{ 
-						rateLimit {
-							limit
-							cost
-							remaining
-							resetAt
-						}					
-						repository(owner:"rancher", name: "k3s") {
-							refs(refPrefix: "refs/tags/", last: 1) {
-								nodes {
-									repository {
-										releases(first:1, orderBy: {field: CREATED_AT, direction: DESC}) {
-											nodes {
-												name
-												createdAt
-												url
-												releaseAssets(last: 4) {
-													nodes {
-														name
-														downloadCount
-														downloadUrl
-													}
-												}	
-											}
-										}		
-									}
-								}
-							}
-						}
-					}
-			`,
-	}
-	jsonValue, _ := json.Marshal(jsonData)
-	request, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewBuffer(jsonValue))
-	client := &http.Client{Timeout: time.Second * 10}
-	response, err := client.Do(request)
-	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
-	}
-	defer response.Body.Close()
-	data, _ := ioutil.ReadAll(response.Body)
-	fmt.Println(string(data))
+// 	jsonData := map[string]string{
+// 		"query": `
+// 					{
+// 						rateLimit {
+// 							limit
+// 							cost
+// 							remaining
+// 							resetAt
+// 						}
+// 						repository(owner:"rancher", name: "k3s") {
+// 							refs(refPrefix: "refs/tags/", last: 1) {
+// 								nodes {
+// 									repository {
+// 										releases(first:1, orderBy: {field: CREATED_AT, direction: DESC}) {
+// 											nodes {
+// 												name
+// 												createdAt
+// 												url
+// 												releaseAssets(last: 4) {
+// 													nodes {
+// 														name
+// 														downloadCount
+// 														downloadUrl
+// 													}
+// 												}
+// 											}
+// 										}
+// 									}
+// 								}
+// 							}
+// 						}
+// 					}
+// 			`,
+// 	}
+// 	jsonValue, _ := json.Marshal(jsonData)
+// 	request, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewBuffer(jsonValue))
+// 	client := &http.Client{Timeout: time.Second * 10}
+// 	response, err := client.Do(request)
+// 	if err != nil {
+// 		fmt.Printf("The HTTP request failed with error %s\n", err)
+// 	}
+// 	defer response.Body.Close()
+// 	data, _ := ioutil.ReadAll(response.Body)
+// 	fmt.Println(string(data))
 
-	// need parse json that came back
-	fmt.Println("Please format response")
+// 	// need parse json that came back
+// 	fmt.Println("Please format response")
 
-	return true
-}
+// 	return true
+// }
 
 // makeRepoReleasesRequest will get release info for the repo
 func makeRepoReleasesRequest(apiURL string) (data []byte, headers http.Header, err error) {

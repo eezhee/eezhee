@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+// var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "eezhee",
