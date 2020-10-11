@@ -4,9 +4,9 @@ import (
 	"github.com/eezhee/eezhee/cmd"
 )
 
-func generateAppName() string {
-	return "appname"
-}
+// func generateAppName() string {
+// 	return "appname"
+// }
 
 func getCurrentGitBranch() string {
 

@@ -118,7 +118,10 @@ func (m *Manager) GetChannels() (channels []string, err error) {
 
 	// make sure we have the list of versions
 	if m.Releases == nil {
-		m.GetVersions()
+		_, err := m.GetVersions()
+		if err != nil {
+			return channels, err
+		}
 	}
 
 	// go throgh all channels and build a list of all their names
