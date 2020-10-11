@@ -103,7 +103,10 @@ func GetRepoReleases(owner string, repo string) (repoReleases []Release, err err
 
 		// extract the release data
 		var releases []Release
-		json.Unmarshal([]byte(data), &releases)
+		err = json.Unmarshal([]byte(data), &releases)
+		if err != nil {
+			return repoReleases, err
+		}
 
 		// add each release to array that will be returned
 		for _, release := range releases {
@@ -156,9 +159,11 @@ func GetVersionUsingREST() []string {
 		// extract the release data
 		// format: v1.17.1-alpha1+k3s1  (note releases before 2020 have different format)
 		var releases []Release
-		json.Unmarshal([]byte(data), &releases)
+		err = json.Unmarshal([]byte(data), &releases)
+		if err != nil {
+			return nil
+		}
 
-		json.Unmarshal([]byte(data), &releases)
 		fmt.Println(len(releases))
 		for _, release := range releases {
 			tagName := release.TagName

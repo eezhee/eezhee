@@ -24,12 +24,16 @@ var buildCmd = &cobra.Command{
 	Short: "Print the version number of Eezhee",
 	Long:  `All software has versions. This is Eezhee's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		buildCluster()
+		err := buildCluster()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
 // buildVM will create a cluster
-func buildCluster() (bool, error) {
+func buildCluster() error {
 
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
@@ -39,7 +43,10 @@ func buildCluster() (bool, error) {
 	// 	fmt.Println("cluster already running (as per deploy-state file)")
 	// 	return false, errors.New("cluster already running (as per deploy-state file)")
 	// }
-	deployState.Load()
+	err := deployState.Load()
+	if err != nil {
+		return err
+	}
 
 	// nope, so we are clear to create a new cluster
 
@@ -49,8 +56,7 @@ func buildCluster() (bool, error) {
 		err := deployConfig.Load()
 		if err != nil {
 			// there is a file but we couldn't load it
-			fmt.Println(err)
-			return false, err
+			return err
 		}
 	}
 
@@ -62,30 +68,27 @@ func buildCluster() (bool, error) {
 	// get ssh key we will use to login to new VM
 	sshFingerprint, err := getSSHFingerprint()
 	if err != nil {
-		fmt.Println(err)
-		return false, err
+		return err
 	}
 
 	// make sure we can talk to DigitalOcean
 	DOManager := digitalocean.NewManager()
 	haveRequirements, err := DOManager.CheckRequirements()
 	if !haveRequirements {
-		fmt.Println(err)
-		return false, err
+		return err
 	}
 
 	// make sure this ssh key is loaded into DigitalOcean
 	uploaded, err := DOManager.CheckSSHKeyUploaded(sshFingerprint)
 	if !uploaded {
-		fmt.Println(err)
-		return false, err
+		return err
 	}
 
 	// set rest of details for new VM
 	if len(deployConfig.Region) == 0 {
 		deployConfig.Region, err = DOManager.SelectClosestRegion()
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
 	if len(deployConfig.Size) == 0 {
@@ -106,9 +109,8 @@ func buildCluster() (bool, error) {
 		time.Sleep(2 * time.Second)
 		vmInfo, err = DOManager.GetVMInfo(vmID)
 		if err != nil {
-			fmt.Println(err)
 			// TODO: vm has been created, really should delete (or should we add retry to getVMInfo?)
-			return false, err
+			return err
 		}
 		status = vmInfo[0].Status
 	}
@@ -141,7 +143,10 @@ func buildCluster() (bool, error) {
 	// should never happen - if here, but in DO API
 	// }
 	deployState.IP = publicIP
-	deployState.Save()
+	err = deployState.Save()
+	if err != nil {
+		return err
+	}
 
 	// figure out which version of k3s to install
 	// k3sManager := k3s.NewManager()
@@ -154,7 +159,7 @@ func buildCluster() (bool, error) {
 
 	// add k3s tag to VM
 
-	return true, nil
+	return nil
 }
 
 // figure out what to call k3s cluster

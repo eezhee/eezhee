@@ -314,7 +314,10 @@ func (m *Manager) ListVMs() (vmInfo []VMInfo, err error) {
 
 	// parse the json output
 	var info []VMInfo
-	json.Unmarshal([]byte(stdoutStderr), &info)
+	err = json.Unmarshal([]byte(stdoutStderr), &info)
+	if err != nil {
+		return nil, err
+	}
 
 	// go through all VMs and look for VMs that are tagged with 'eezhee'
 	for i := range info {
