@@ -149,7 +149,10 @@ func (m *Manager) CheckSSHKeyUploaded(fingerprint string) (bool, error) {
 		return false, err
 	}
 
-	json.Unmarshal([]byte(stdoutStderr), &sshKeys)
+	err = json.Unmarshal([]byte(stdoutStderr), &sshKeys)
+	if err != nil {
+		return false, err
+	}
 
 	// go through each key and see if it matches what is on this machine
 	for i := 0; i < len(sshKeys); i++ {
@@ -167,10 +170,10 @@ type regionPingTimes struct {
 	ipAddress string
 }
 
-type sampleIPAddress struct {
-	region    string
-	ipAddress string
-}
+// type sampleIPAddress struct {
+// 	region    string
+// 	ipAddress string
+// }
 
 func getPingTime(ipAddress string) (pingTime int64, err error) {
 
@@ -181,7 +184,10 @@ func getPingTime(ipAddress string) (pingTime int64, err error) {
 		return 0, err
 	}
 	pinger.Count = 5
-	pinger.Run()                 // blocks until finished
+	err = pinger.Run() // blocks until finished
+	if err != nil {
+		return 0, err
+	}
 	stats := pinger.Statistics() // get send/receive/rtt stats
 
 	pingTime = stats.AvgRtt.Milliseconds()
@@ -241,7 +247,10 @@ func (m *Manager) GetVMInfo(vmID int) ([]VMInfo, error) {
 	}
 
 	// parse the json output
-	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	err = json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	if err != nil {
+		return vmInfo, err
+	}
 
 	return vmInfo, nil
 }
@@ -284,7 +293,10 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	}
 
 	// parse the json output
-	json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	err = json.Unmarshal([]byte(stdoutStderr), &vmInfo)
+	if err != nil {
+		return vmInfo, err
+	}
 
 	return vmInfo, nil
 }
@@ -302,7 +314,10 @@ func (m *Manager) ListVMs() (vmInfo []VMInfo, err error) {
 
 	// parse the json output
 	var info []VMInfo
-	json.Unmarshal([]byte(stdoutStderr), &info)
+	err = json.Unmarshal([]byte(stdoutStderr), &info)
+	if err != nil {
+		return nil, err
+	}
 
 	// go through all VMs and look for VMs that are tagged with 'eezhee'
 	for i := range info {

@@ -40,11 +40,8 @@ func (d *DeployConfig) FileExists() bool {
 
 	// try and get info about file
 	_, err := os.Stat(d.v.ConfigFileUsed())
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 // Load a given deploy state file

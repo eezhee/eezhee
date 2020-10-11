@@ -1,0 +1,16 @@
+name: Super-Linter
+
+on: push
+
+jobs:
+  super-lint:
+    name: Lint code base
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run Super-Linter
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.29
+        #args: --issues-exit-code=-

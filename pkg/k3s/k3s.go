@@ -104,7 +104,7 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 				m.Releases[version.Track] = append(m.Releases[version.Track], fullVersion)
 			}
 
-		} else {
+			// } else {
 			// ignore non-final releases
 			// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
 		}
@@ -118,7 +118,10 @@ func (m *Manager) GetChannels() (channels []string, err error) {
 
 	// make sure we have the list of versions
 	if m.Releases == nil {
-		m.GetVersions()
+		_, err := m.GetVersions()
+		if err != nil {
+			return channels, err
+		}
 	}
 
 	// go throgh all channels and build a list of all their names

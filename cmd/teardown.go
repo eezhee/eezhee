@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/config"
@@ -19,49 +21,54 @@ var teardownCmd = &cobra.Command{
 	Long:  `All software has versions. This is Eezhee's`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		teardownVM()
+		err := teardownVM()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
 // teardownVM will tear down the cluster & app
-func teardownVM() {
+func teardownVM() error {
 
 	// see if there is a state file (so we know what we're supposed to teardown)
 	deployStateFile := config.NewDeployState()
 	if !deployStateFile.FileExists() {
-		fmt.Println("app is not deployed so nothing to teardown")
-		return
+		return errors.New("app is not deployed so nothing to teardown")
 	}
 
 	// load state file
 	err := deployStateFile.Load()
 	if err != nil {
-		fmt.Println("error reading deploy state file")
-		return
+		return errors.New("error reading deploy state file")
 	}
 
 	// see which cloud cluster created on
 	cloud := deployStateFile.Cloud
 	if strings.Compare(cloud, "digitalocean") != 0 {
-		fmt.Println("state file reference cloud we don't support: ", cloud)
-		return
+		return errors.New("state file reference cloud we don't support: ")
 	}
 
 	// get details of VM
 	ID := deployStateFile.ID
 	if ID == 0 {
-		fmt.Println("invalid VM ID:", ID, ".  Can no teardown VM")
-		return
+
+		msg := fmt.Sprintf("invalid VM ID: %d - Can not teardown VM\n", ID)
+		return errors.New(msg)
 	}
 
 	// ready to delete the cluster
 	manager := digitalocean.NewManager()
 	err = manager.DeleteVM(ID)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
-	deployStateFile.Delete()
+	err = deployStateFile.Delete()
+	if err != nil {
+		return err
+	}
 
+	return nil
 }

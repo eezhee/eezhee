@@ -79,19 +79,14 @@ Currently you can set:
 
 - Size
 - Region.  Defaults to the closest region.  You can set it to any of DigitalOceans regions.  The list of possible values includes:
+- Name.  What you name your cluster. This also matches the kubectl context name
 
 ### Deploy State File
 
-You can
-certain parameters, you can create a `deploy.yaml` file
-
-To delete the VM once you don't need it anymore, use:
-
-```bash
-./eezhee teardown
-```
+Once a cluster has been created, Eezhee will create a `deploy-state.yaml` file in the current directory.  This has all the key details about your cluster.  This file should be considered read-only.
 
 ## Final Thoughts
 
 Hopefully Eezhee will make it easier for you to leverage all the benefits of kubernetes without getting bogged down in the details.  
+
 Good luck and have fun!
