@@ -3,11 +3,14 @@ name: Build Go binaries
 on: push
 jobs:
   build-test:
-    name: build-test
-    runs-on: ubuntu-latest
+    name: build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-20.04 ]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
-        # with:
-        #   go-version: '^1.13.1' # The Go version to download (if necessary) and use.
-      - run: go version
+        with:
+          go-version: '^1.15'
+      - run: go build
