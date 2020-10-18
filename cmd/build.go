@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eezhee/eezhee/pkg/cloudflare"
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
@@ -34,6 +35,13 @@ var buildCmd = &cobra.Command{
 
 // buildVM will create a cluster
 func buildCluster() error {
+
+	result := cloudflare.Test()
+	if !result {
+		os.Exit(1)
+	}
+
+	os.Exit(1)
 
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
