@@ -37,14 +37,15 @@ var buildCmd = &cobra.Command{
 func buildCluster() error {
 
 	appConfig := config.NewAppConfig()
-	appConfig.Load()
+	err := appConfig.Load()
+	if err != nil {
+		return err
+	}
 
 	result := cloudflare.Test(appConfig.CloudFlareAPIKey)
 	if !result {
 		os.Exit(1)
 	}
-
-	os.Exit(1)
 
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
@@ -54,7 +55,7 @@ func buildCluster() error {
 	// 	fmt.Println("cluster already running (as per deploy-state file)")
 	// 	return false, errors.New("cluster already running (as per deploy-state file)")
 	// }
-	err := deployState.Load()
+	err = deployState.Load()
 	if err != nil {
 		return err
 	}
