@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eezhee/eezhee/pkg/cloudflare"
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
@@ -35,6 +36,17 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
+	appConfig := config.NewAppConfig()
+	err := appConfig.Load()
+	if err != nil {
+		return err
+	}
+
+	result := cloudflare.Test(appConfig.CloudFlareAPIKey)
+	if !result {
+		os.Exit(1)
+	}
+
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
 	deployState := config.NewDeployState()
@@ -43,7 +55,7 @@ func buildCluster() error {
 	// 	fmt.Println("cluster already running (as per deploy-state file)")
 	// 	return false, errors.New("cluster already running (as per deploy-state file)")
 	// }
-	err := deployState.Load()
+	err = deployState.Load()
 	if err != nil {
 		return err
 	}
