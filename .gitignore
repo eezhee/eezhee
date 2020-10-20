@@ -2,5 +2,5 @@
 .DS_Store
 eezhee
 release
-deploy-state.yaml
 kubeconfig
+*.yaml

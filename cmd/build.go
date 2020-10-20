@@ -36,7 +36,10 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
-	result := cloudflare.Test()
+	appConfig := config.NewAppConfig()
+	appConfig.Load()
+
+	result := cloudflare.Test(appConfig.CloudFlareAPIKey)
 	if !result {
 		os.Exit(1)
 	}
