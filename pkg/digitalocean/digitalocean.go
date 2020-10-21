@@ -177,7 +177,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		return vmInfo, err
 	}
 
-	vmInfo, err = convertVMInfoToGenericFormat(*newDroplet)
+	vmInfo, _ = convertVMInfoToGenericFormat(*newDroplet)
 
 	return vmInfo, nil
 }
