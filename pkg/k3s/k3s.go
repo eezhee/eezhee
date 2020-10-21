@@ -159,7 +159,7 @@ func (m *Manager) CheckRequirements() (bool, error) {
 }
 
 // Install k3s on given VM
-func (m *Manager) Install(ipAddress string, k3sVersion string) bool {
+func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) bool {
 
 	user := "root"
 	sshPort := 22
@@ -217,7 +217,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string) bool {
 	// need to update kubeconfig so works outside the VM
 	// IP address needs to be set to external IP
 	// also rename context to something other than 'default'
-	context := "appname"
+	context := appName
 
 	configUpdater := strings.NewReplacer(
 		"127.0.0.1", ipAddress,

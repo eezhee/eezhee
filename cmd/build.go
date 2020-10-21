@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eezhee/eezhee/pkg/cloudflare"
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
@@ -44,30 +43,11 @@ func buildCluster() error {
 		return err
 	}
 
-	// Temp - just for testing
-	vmManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
-	if vmManager == nil {
-		return errors.New("digitalocean not configured")
-	}
-	vmManager.Test()
-
-	// Temp - just for testing
-	result := cloudflare.Test(appConfig.CloudFlareAPIKey)
-	if !result {
-		return errors.New("cloudflare not configured")
-	}
-
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
 	deployState := config.NewDeployState()
-	// TEMP: just for debugging
-	// if deployState.FileExists() {
-	// 	fmt.Println("cluster already running (as per deploy-state file)")
-	// 	return false, errors.New("cluster already running (as per deploy-state file)")
-	// }
-	err = deployState.Load()
-	if err != nil {
-		return err
+	if deployState.FileExists() {
+		return errors.New("cluster already running (as per deploy-state file)")
 	}
 
 	// nope, so we are clear to create a new cluster
@@ -91,6 +71,20 @@ func buildCluster() error {
 	sshFingerprint, err := getSSHFingerprint()
 	if err != nil {
 		return err
+	}
+	deployConfig.SSHFingerprint = sshFingerprint
+
+	// see which cloud to create the VM on
+	if len(deployConfig.Cloud) == 0 {
+		deployConfig.Cloud = "digitalocean"
+	}
+	switch deployConfig.Cloud {
+	case "digitalocean":
+	// case "aws":
+	// case "gcloud":
+	// case "azure":
+	default:
+		return errors.New("only can deploy to digitalocean right now")
 	}
 
 	// make sure we can talk to DigitalOcean
@@ -119,7 +113,10 @@ func buildCluster() error {
 	imageName := "ubuntu-20-04-x64"
 
 	// time to create the VM
-	vmInfo, err := DOManager.CreateVM(deployConfig.Name, imageName, deployConfig.Size, deployConfig.Region, sshFingerprint)
+	vmInfo, err := DOManager.CreateVM(
+		deployConfig.Name, imageName, deployConfig.Size,
+		deployConfig.Region, deployConfig.SSHFingerprint,
+	)
 	if err != nil {
 		return err
 	}
@@ -131,12 +128,16 @@ func buildCluster() error {
 
 		// wait a bit
 		time.Sleep(2 * time.Second)
-		vmInfo2, err := DOManager.GetVMInfo(vmID)
+		vmInfo, err = DOManager.GetVMInfo(vmID)
 		if err != nil {
 			// TODO: vm has been created, really should delete (or should we add retry to getVMInfo?)
 			return err
 		}
-		status = vmInfo2.Status
+		status = vmInfo.Status
+	}
+	vmPublicIP, err := vmInfo.GetPublicIP()
+	if err != nil {
+		return err
 	}
 	fmt.Println("vm now ready to use")
 
@@ -154,38 +155,23 @@ func buildCluster() error {
 	// then want to see if our version if most recent.  if not allow upgrade
 
 	// time to install k3s on the new VM
-	version := "v" + k3sVersion + "+k3s1"
-	k3sManager.Install(deployState.IP, version)
+	version := k3sVersion + "+k3s1"
+	k3sManager.Install(vmPublicIP, version, deployConfig.Name)
 
 	// done, cluster up and running
 
 	// save key details in state file
-	deployState.Cloud = "digitalocean"
+	deployState.Cloud = deployConfig.Cloud
 	deployState.ID = vmInfo.ID
 	deployState.Name = vmInfo.Name
 	deployState.Region = vmInfo.Region.Slug
-	deployState.Size = vmInfo.SizeSlug
-	publicIP, err := vmInfo.GetPublicIP()
-	if err != nil {
-		return err
-		// should never happen - if here, but in DO API
-	}
-	deployState.IP = publicIP
+	deployState.Size = vmInfo.Size.Slug
+	deployState.IP = vmPublicIP
+	deployState.K3sVersion = k3sVersion
 	err = deployState.Save()
 	if err != nil {
 		return err
 	}
-
-	// figure out which version of k3s to install
-	// k3sManager := k3s.NewManager()
-	// k3sVersion := k3sManager.GetLatestVersion()
-	// fmt.Println(k3sVersion)
-
-	// // time to install k3s on the new VM
-	// k3sManager.Install()
-	// k3sManager.Install(latestRelease)
-
-	// add k3s tag to VM
 
 	return nil
 }

@@ -34,26 +34,6 @@ type Manager struct {
 	api      *godo.Client
 }
 
-// Test is where we test code to most to DO api rather than doctl
-func (m *Manager) Test() error {
-
-	// need to be able to discover the api key
-	// os.UserConfigDir() /doctl / config.yaml
-	// path := filepath.Join(cfgDir, "doctl")
-	// user viper to load the yaml file - details in doctl/commands/doit.go
-
-	ctx := context.TODO()
-	keys, _, err := m.api.Keys.List(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	for _, key := range keys {
-		fmt.Println(key.Name)
-	}
-	return nil
-}
-
 // NewManager creates a manage object & inits it
 func NewManager(providerAPIToken string) (m *Manager) {
 
@@ -164,7 +144,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo eezhee.VMInfo, err error) {
 	}
 
 	// need to convert info from digitalocean format to our format
-	vmInfo.Name = droplet.Name
+	vmInfo, _ = convertVMInfoToGenericFormat(*droplet)
 
 	return vmInfo, nil
 }
@@ -195,9 +175,6 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	newDroplet, _, err := m.api.Droplets.Create(ctx, createRequest)
 	if err != nil {
 		return vmInfo, err
-	}
-	if id := newDroplet.ID; id != 1 {
-		fmt.Printf("expected id '%d', received '%d'", 1, id)
 	}
 
 	vmInfo, err = convertVMInfoToGenericFormat(*newDroplet)
@@ -257,27 +234,28 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (eezhee.VMInfo, erro
 	vmInfo.VCPUs = dropletInfo.Vcpus
 	vmInfo.Disk = dropletInfo.Disk
 	vmInfo.Region = eezhee.RegionInfo{
-		Name: dropletInfo.Region.Name,
-		Slug: dropletInfo.Region.Slug,
+		Name:     dropletInfo.Region.Name,
+		Slug:     dropletInfo.Region.Slug,
+		Features: dropletInfo.Region.Features,
 	}
 	vmInfo.Status = dropletInfo.Status
 	// vmInfo.SizeSlug = dropletInfo.SizeSlug
 	vmInfo.CreatedAt = dropletInfo.Created
 	vmInfo.Image = eezhee.ImageInfo{
-		ID:            dropletInfo.Image.ID,
-		Name:          dropletInfo.Image.Name,
-		Type:          dropletInfo.Image.Type,
-		Distrubution:  dropletInfo.Image.Distribution,
-		Slug:          dropletInfo.Image.Slug,
-		SizeGigabytes: dropletInfo.Image.SizeGigaBytes,
-		CreatedAt:     dropletInfo.Image.Created,
+		ID:           dropletInfo.Image.ID,
+		Name:         dropletInfo.Image.Name,
+		Description:  dropletInfo.Image.Description,
+		Type:         dropletInfo.Image.Type,
+		Distrubution: dropletInfo.Image.Distribution,
+		Slug:         dropletInfo.Image.Slug,
+		CreatedAt:    dropletInfo.Image.Created,
 	}
 	vmInfo.Size = eezhee.SizeInfo{
 		Slug: dropletInfo.Size.Slug,
-		// Memory: dropletInfo.Size.Memory,
 	}
 	vmInfo.Networks = eezhee.NetworkInfo{
 		V4Info: []eezhee.V4NetworkInfo{},
+		V6Info: []eezhee.V6NetworkInfo{},
 	}
 	for _, ipv4Info := range dropletInfo.Networks.V4 {
 		networkInfo := eezhee.V4NetworkInfo{
@@ -287,6 +265,15 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (eezhee.VMInfo, erro
 			Type:      ipv4Info.Type,
 		}
 		vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, networkInfo)
+	}
+	for _, ipv6Info := range dropletInfo.Networks.V6 {
+		networkInfo := eezhee.V6NetworkInfo{
+			IPAddress: ipv6Info.IPAddress,
+			Netmask:   ipv6Info.Netmask,
+			Gateway:   ipv6Info.Gateway,
+			Type:      ipv6Info.Type,
+		}
+		vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, networkInfo)
 	}
 
 	vmInfo.VPCUUID = dropletInfo.VPCUUID
