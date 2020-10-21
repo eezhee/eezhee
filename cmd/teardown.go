@@ -32,6 +32,13 @@ var teardownCmd = &cobra.Command{
 // teardownVM will tear down the cluster & app
 func teardownVM() error {
 
+	// get app settings
+	appConfig := config.NewAppConfig()
+	err := appConfig.Load()
+	if err != nil {
+		return err
+	}
+
 	// see if there is a state file (so we know what we're supposed to teardown)
 	deployStateFile := config.NewDeployState()
 	if !deployStateFile.FileExists() {
@@ -39,7 +46,7 @@ func teardownVM() error {
 	}
 
 	// load state file
-	err := deployStateFile.Load()
+	err = deployStateFile.Load()
 	if err != nil {
 		return errors.New("error reading deploy state file")
 	}
@@ -59,7 +66,7 @@ func teardownVM() error {
 	}
 
 	// ready to delete the cluster
-	manager := digitalocean.NewManager()
+	manager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
 	err = manager.DeleteVM(ID)
 	if err != nil {
 		return err

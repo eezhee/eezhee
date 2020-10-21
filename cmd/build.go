@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -36,15 +37,24 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
+	// get app settings
 	appConfig := config.NewAppConfig()
 	err := appConfig.Load()
 	if err != nil {
 		return err
 	}
 
+	// Temp - just for testing
+	vmManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
+	if vmManager == nil {
+		return errors.New("digitalocean not configured")
+	}
+	vmManager.Test()
+
+	// Temp - just for testing
 	result := cloudflare.Test(appConfig.CloudFlareAPIKey)
 	if !result {
-		os.Exit(1)
+		return errors.New("cloudflare not configured")
 	}
 
 	// make sure the cluster doesn't already exist
@@ -84,14 +94,14 @@ func buildCluster() error {
 	}
 
 	// make sure we can talk to DigitalOcean
-	DOManager := digitalocean.NewManager()
-	haveRequirements, err := DOManager.CheckRequirements()
-	if !haveRequirements {
-		return err
-	}
+	DOManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
+	// haveRequirements, err := DOManager.CheckRequirements()
+	// if !haveRequirements {
+	// 	return err
+	// }
 
 	// make sure this ssh key is loaded into DigitalOcean
-	uploaded, err := DOManager.CheckSSHKeyUploaded(sshFingerprint)
+	uploaded, err := DOManager.IsSSHKeyUploaded(sshFingerprint)
 	if !uploaded {
 		return err
 	}
@@ -113,20 +123,20 @@ func buildCluster() error {
 	if err != nil {
 		return err
 	}
-	vmID := vmInfo[0].ID
-	status := vmInfo[0].Status
+	vmID := vmInfo.ID
+	status := vmInfo.Status
 
 	// see if vm ready.  if not need to wait as don't have IP yet
 	for strings.Compare(status, "active") != 0 {
 
 		// wait a bit
 		time.Sleep(2 * time.Second)
-		vmInfo, err = DOManager.GetVMInfo(vmID)
+		vmInfo2, err := DOManager.GetVMInfo(vmID)
 		if err != nil {
 			// TODO: vm has been created, really should delete (or should we add retry to getVMInfo?)
 			return err
 		}
-		status = vmInfo[0].Status
+		status = vmInfo2.Status
 	}
 	fmt.Println("vm now ready to use")
 
@@ -151,11 +161,11 @@ func buildCluster() error {
 
 	// save key details in state file
 	deployState.Cloud = "digitalocean"
-	deployState.ID = vmInfo[0].ID
-	deployState.Name = vmInfo[0].Name
-	deployState.Region = vmInfo[0].Region.Slug
-	deployState.Size = vmInfo[0].SizeSlug
-	publicIP, err := vmInfo[0].GetPublicIP()
+	deployState.ID = vmInfo.ID
+	deployState.Name = vmInfo.Name
+	deployState.Region = vmInfo.Region.Slug
+	deployState.Size = vmInfo.SizeSlug
+	publicIP, err := vmInfo.GetPublicIP()
 	if err != nil {
 		return err
 		// should never happen - if here, but in DO API
