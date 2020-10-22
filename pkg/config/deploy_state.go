@@ -9,13 +9,15 @@ import (
 
 // DeployState has details of the deploy-state file for a cluster
 type DeployState struct {
-	v      *viper.Viper // used to read/write state
-	Cloud  string       // which cloud cluster was create in
-	ID     int          // ID of the VM cluster is on
-	Name   string       // name of the cluster
-	Region string       // region cluster deployed to
-	Size   string       // VM size
-	IP     string       // public IPv4 address
+	v              *viper.Viper // used to read/write state
+	Cloud          string       // which cloud cluster was create in
+	ID             int          // ID of the VM cluster is on
+	Name           string       // name of the cluster
+	Region         string       // region cluster deployed to
+	Size           string       // VM size
+	IP             string       // public IPv4 address
+	SSHFingerprint string       // which ssh key authorited to access VM
+	K3sVersion     string       // version of k3s installed
 }
 
 // NewDeployState will create a new deploy file object
@@ -64,6 +66,8 @@ func (s *DeployState) Load() error {
 	s.Region = s.v.GetString("region")
 	s.Size = s.v.GetString("size")
 	s.IP = s.v.GetString("ip")
+	s.SSHFingerprint = s.v.GetString("ssh-fingerprint")
+	s.K3sVersion = s.v.GetString("k3s-version")
 
 	return nil
 }
@@ -78,6 +82,8 @@ func (s *DeployState) Save() error {
 	s.v.Set("region", s.Region)
 	s.v.Set("size", s.Size)
 	s.v.Set("ip", s.IP)
+	s.v.Set("ssh-fingerprint", s.SSHFingerprint)
+	s.v.Set("k3s-version", s.K3sVersion)
 
 	err := s.v.WriteConfig()
 	if err != nil {

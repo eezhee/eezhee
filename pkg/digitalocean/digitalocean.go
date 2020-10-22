@@ -1,14 +1,14 @@
 package digitalocean
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
-	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/digitalocean/godo"
+	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/go-ping/ping"
 )
 
@@ -28,152 +28,52 @@ const maxPingTime = 750
 
 // TODO: the way to manage sizes is on a 3 (or more dimensional plane).  User decides what they want to increase and we figure out the right VM upgrade
 
-// VMInfo has info about a specific VM
-type VMInfo struct {
-	ID        int         `json:"id"`
-	Name      string      `json:"name"`
-	Memory    int         `json:"memory"`
-	VCPUs     int         `json:"vcpus"`
-	Disk      int         `json:"disk"`
-	Region    RegionInfo  `json:"region"`
-	Status    string      `json:"status"`
-	SizeSlug  string      `json:"size_slug"`
-	CreatedAt string      `json:"created_at"`
-	Image     ImageInfo   `json:"image"`
-	Size      SizeInfo    `json:"size"`
-	Networks  NetworkInfo `json:"networks"`
-	Tags      []string    `json:"tags"`
-	VPCUUID   string      `json:"vpc_uuid"`
-	// VolumeIDs array of:
-}
-
-// RegionInfo has details about a given datacenter
-type RegionInfo struct {
-	Slug      string   `json:"slug"`
-	Name      string   `json:"name"`
-	Sizes     []string `json:"sizes"`
-	Available bool     `json:"available"`
-	Features  []string `json:"features"`
-}
-
-// SizeInfo has details about a specific VM size
-type SizeInfo struct {
-	Slug         string   `json:"slug"`
-	Memory       int      `json:"memory"`
-	VCPUs        int      `json:"vcpus"`
-	Disk         int      `json:"disk"`
-	PriceMonthly float32  `json:"price_monthly"`
-	PriceHourly  float32  `json:"price_hourly"`
-	Regions      []string `json:"regions"`
-	Available    bool     `json:"available"`
-	Transfer     int      `json:"transfer"`
-}
-
-// ImageInfo contains details about a disk image
-type ImageInfo struct {
-	ID            int      `json:"id"`
-	Name          string   `json:"name"`
-	Type          string   `json:"type"`
-	Distrubution  string   `json:"distribution"`
-	Slug          string   `json:"slug"`    // N/A if status is 'retired'
-	Public        bool     `json:"public"`  // N/A if status is 'retired'
-	Regions       []string `json:"regions"` // N/A if status is 'retired'
-	MinDiskSize   int      `json:"min_disk_size"`
-	SizeGigabytes float64  `json:"size_gigabytes"`
-	CreatedAt     string   `json:"created_at"`
-	Description   string   `json:"description"`
-	Status        string   `json:"status"`
-}
-
-// V4NetworkInfo has details of ipv4 networks
-type V4NetworkInfo struct {
-	IPAddress string `json:"ip_address"`
-	Netmask   string `json:"netmask"`
-	Gateway   string `json:"gateway"`
-	Type      string `json:"type"`
-}
-
-// NetworkInfo has info about the networks a VM has
-type NetworkInfo struct {
-	V4Info []V4NetworkInfo `json:"v4"`
-}
-
 // Manager handles interactions with DigitalOcean API
 type Manager struct {
+	APIToken string
+	api      *godo.Client
 }
 
 // NewManager creates a manage object & inits it
-func NewManager() (m *Manager) {
+func NewManager(providerAPIToken string) (m *Manager) {
+
+	if len(providerAPIToken) == 0 {
+		fmt.Println("no digitalocean api token set")
+		return nil
+	}
+
 	manager := new(Manager)
+	manager.APIToken = providerAPIToken
+	manager.api = godo.NewFromToken(manager.APIToken)
+
 	return manager
 }
 
-// CheckRequirements makes sure necessary things installed to talk to DO
-func (m *Manager) CheckRequirements() (bool, error) {
+// IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
+func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 
-	// is doctl installed
-	cmd := exec.Command("which", "doctl")
-	_, err := cmd.CombinedOutput()
-	if err != nil {
-		return false, errors.New("doctl is not installed")
-	}
-
-	// has user authenticated
-	// should list at least one item, normally is `default` context
-	cmd = exec.Command("doctl", "auth", "list")
-	_, err = cmd.CombinedOutput()
-	if err != nil {
-		return false, errors.New("doctl is not logged in.  Use 'doctl auth init'")
-	}
-
-	return true, nil
-}
-
-// SSHKeys has details of a ssh key in user's DO account
-type SSHKeys struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"public_key"`
-}
-
-// CheckSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
-func (m *Manager) CheckSSHKeyUploaded(fingerprint string) (bool, error) {
-
-	var sshKeys []SSHKeys
+	ctx := context.TODO()
 
 	// get list of sshkeys DO knows about
-	cmd := exec.Command("doctl", "compute", "ssh-key", "list", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
-	if err != nil {
-		return false, err
-	}
-
-	err = json.Unmarshal([]byte(stdoutStderr), &sshKeys)
+	sshKeys, _, err := m.api.Keys.List(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 
 	// go through each key and see if it matches what is on this machine
-	for i := 0; i < len(sshKeys); i++ {
-		if strings.Compare(fingerprint, sshKeys[i].Fingerprint) == 0 {
-			// fmt.Println("found ssh key")
+	for _, sshKey := range sshKeys {
+		if strings.Compare(fingerprint, sshKey.Fingerprint) == 0 {
 			return true, nil
 		}
 	}
 
-	return false, errors.New("ssh key not available.  you need to upload it to DO using the web console")
+	return false, errors.New("ssh key not available on digitalocean")
 }
 
 type regionPingTimes struct {
 	name      string
 	ipAddress string
 }
-
-// type sampleIPAddress struct {
-// 	region    string
-// 	ipAddress string
-// }
 
 func getPingTime(ipAddress string) (pingTime int64, err error) {
 
@@ -196,9 +96,9 @@ func getPingTime(ipAddress string) (pingTime int64, err error) {
 }
 
 // SelectClosestRegion will check all DO regions to find the closest
-func (m *Manager) SelectClosestRegion() (string, error) {
+func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
-	sampleIPs := []regionPingTimes{
+	regionIPs := []regionPingTimes{
 		{"ams2", "206.189.240.1"},
 		{"blr1", "143.110.180.2"},
 		{"fra1", "138.68.109.1"},
@@ -210,12 +110,12 @@ func (m *Manager) SelectClosestRegion() (string, error) {
 	}
 
 	// default to NYC
-	var bestRegion = "nyc1" // default to nyc
+	closestRegion = "nyc1"
 
 	// get ping time to each region
 	// to see which is the closest
 	var lowestPingTime = maxPingTime
-	for _, region := range sampleIPs {
+	for _, region := range regionIPs {
 		pingTime, err := getPingTime(region.ipAddress)
 		if err != nil {
 			return "", err
@@ -224,109 +124,84 @@ func (m *Manager) SelectClosestRegion() (string, error) {
 
 		// is this datacenter closer than others we've seen so far
 		if int(pingTime) < lowestPingTime {
-			bestRegion = region.name
+			closestRegion = region.name
 			lowestPingTime = int(pingTime)
 		}
 	}
 
-	return bestRegion, nil
+	return closestRegion, nil
 }
 
 // GetVMInfo will get details of a VM
-func (m *Manager) GetVMInfo(vmID int) ([]VMInfo, error) {
-
-	var vmInfo []VMInfo
+func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 
 	// get the latest VM info.  see if status active now
-	getCmd := exec.Command("doctl", "compute", "droplet", "get", strconv.Itoa(vmID), "-o", "json")
-	stdoutStderr, err := getCmd.CombinedOutput()
+	ctx := context.TODO()
+	droplet, _, err := m.api.Droplets.Get(ctx, vmID)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println(string(stdoutStderr))
 		return vmInfo, err
 	}
 
-	// parse the json output
-	err = json.Unmarshal([]byte(stdoutStderr), &vmInfo)
-	if err != nil {
-		return vmInfo, err
-	}
+	// need to convert info from digitalocean format to our format
+	vmInfo, _ = convertVMInfoToGenericFormat(*droplet)
 
 	return vmInfo, nil
 }
 
-// GetPublicIP for the VM
-func (v *VMInfo) GetPublicIP() (publicIP string, err error) {
-
-	// go through all network and find which one is public
-	numNetworks := len(v.Networks.V4Info)
-
-	for i := 0; i < numNetworks; i++ {
-
-		networkType := v.Networks.V4Info[i].Type
-
-		if strings.Compare(networkType, "public") == 0 {
-			publicIP := v.Networks.V4Info[i].IPAddress
-			return publicIP, nil
-		}
-
-	}
-
-	// did not find public IP
-	return publicIP, errors.New("VM does not have public IP")
-}
-
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) ([]VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
 
-	var vmInfo []VMInfo
+	var vmInfo core.VMInfo
 
-	// create the vm
-	cmd := exec.Command("doctl", "compute", "droplet", "create", name,
-		"--image", image, "--size", size, "--region", region, "--ssh-keys", sshFingerprint,
-		"--tag-name", "eezhee", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
+	createRequest := &godo.DropletCreateRequest{
+		Name:   name,
+		Region: region,
+		Size:   size,
+		Image: godo.DropletCreateImage{
+			Slug: image,
+		},
+		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: sshFingerprint}},
+		// Volumes: []godo.DropletCreateVolume{
+		// 	{Name: "hello-im-a-volume"},
+		// 	{ID: "hello-im-another-volume"},
+		// 	{Name: "hello-im-still-a-volume", ID: "should be ignored due to Name"},
+		// },
+		// VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Tags: []string{"eezhee"},
+	}
+	ctx := context.TODO()
+
+	newDroplet, _, err := m.api.Droplets.Create(ctx, createRequest)
 	if err != nil {
-		fmt.Println(string(stdoutStderr))
-		fmt.Println(err)
 		return vmInfo, err
 	}
 
-	// parse the json output
-	err = json.Unmarshal([]byte(stdoutStderr), &vmInfo)
-	if err != nil {
-		return vmInfo, err
-	}
+	vmInfo, _ = convertVMInfoToGenericFormat(*newDroplet)
 
 	return vmInfo, nil
 }
 
 // ListVMs will return a list of all VMs created by eezhee
-func (m *Manager) ListVMs() (vmInfo []VMInfo, err error) {
+func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
+
+	ctx := context.TODO()
 
 	// get a list of VMs running on DO
-	cmd := exec.Command("doctl", "compute", "droplet", "list", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
-	if err != nil {
-		// fmt.Println(err)
-		return nil, err
-	}
-
-	// parse the json output
-	var info []VMInfo
-	err = json.Unmarshal([]byte(stdoutStderr), &info)
+	options := godo.ListOptions{}
+	droplets, _, err := m.api.Droplets.List(ctx, &options)
 	if err != nil {
 		return nil, err
 	}
 
 	// go through all VMs and look for VMs that are tagged with 'eezhee'
-	for i := range info {
-		if len(info[i].Tags) > 0 {
-			for _, tag := range info[i].Tags {
+	for i := range droplets {
+		if len(droplets[i].Tags) > 0 {
+			for _, tag := range droplets[i].Tags {
 				if strings.Compare(tag, "eezhee") == 0 {
 					// we created this VM
-					vmInfo = append(vmInfo, info[i])
-					// fmt.Println(vmInfo[i].Name, " (", vmInfo[i].ID, ")  status:", vmInfo[i].Status, " created at:", vmInfo[i].CreatedAt)
+					info, _ := convertVMInfoToGenericFormat(droplets[i])
+					vmInfo = append(vmInfo, info)
 				}
 			}
 		}
@@ -338,21 +213,72 @@ func (m *Manager) ListVMs() (vmInfo []VMInfo, err error) {
 // DeleteVM will delete a given VM
 func (m *Manager) DeleteVM(ID int) error {
 
-	// doctl compute droplet delete id
-	cmd := exec.Command("doctl", "compute", "droplet", "delete", strconv.Itoa(ID), "--force", "-o", "json")
-	stdoutStderr, err := cmd.CombinedOutput()
+	ctx := context.TODO()
+
+	_, err := m.api.Droplets.Delete(ctx, ID)
 	if err != nil {
-		fmt.Println(string(stdoutStderr))
-		fmt.Println(err)
 		return err
 	}
-
-	fmt.Println(string(stdoutStderr))
 
 	return nil
 }
 
-// ComputeDropletCreate will create a new VM
-func ComputeDropletCreate() (vmInfo VMInfo, err error) {
-	return vmInfo, err
+// convert digitalocean droplet info into our generic format
+func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error) {
+
+	var vmInfo core.VMInfo
+
+	vmInfo.ID = dropletInfo.ID
+	vmInfo.Name = dropletInfo.Name
+	vmInfo.Memory = dropletInfo.Memory
+	vmInfo.VCPUs = dropletInfo.Vcpus
+	vmInfo.Disk = dropletInfo.Disk
+	vmInfo.Region = core.RegionInfo{
+		Name:     dropletInfo.Region.Name,
+		Slug:     dropletInfo.Region.Slug,
+		Features: dropletInfo.Region.Features,
+	}
+	vmInfo.Status = dropletInfo.Status
+	// vmInfo.SizeSlug = dropletInfo.SizeSlug
+	vmInfo.CreatedAt = dropletInfo.Created
+	vmInfo.Image = core.ImageInfo{
+		ID:           dropletInfo.Image.ID,
+		Name:         dropletInfo.Image.Name,
+		Description:  dropletInfo.Image.Description,
+		Type:         dropletInfo.Image.Type,
+		Distrubution: dropletInfo.Image.Distribution,
+		Slug:         dropletInfo.Image.Slug,
+		CreatedAt:    dropletInfo.Image.Created,
+	}
+	vmInfo.Size = core.SizeInfo{
+		Slug: dropletInfo.Size.Slug,
+	}
+	vmInfo.Networks = core.NetworkInfo{
+		V4Info: []core.V4NetworkInfo{},
+		V6Info: []core.V6NetworkInfo{},
+	}
+
+	for _, ipv4Info := range dropletInfo.Networks.V4 {
+		v4NetworkInfo := core.V4NetworkInfo{
+			IPAddress: ipv4Info.IPAddress,
+			Netmask:   ipv4Info.Netmask,
+			Gateway:   ipv4Info.Gateway,
+			Type:      ipv4Info.Type,
+		}
+		vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
+	}
+	for _, ipv6Info := range dropletInfo.Networks.V6 {
+		v6NetworkInfo := core.V6NetworkInfo{
+			IPAddress: ipv6Info.IPAddress,
+			Netmask:   ipv6Info.Netmask,
+			Gateway:   ipv6Info.Gateway,
+			Type:      ipv6Info.Type,
+		}
+		vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
+	}
+
+	vmInfo.VPCUUID = dropletInfo.VPCUUID
+	vmInfo.Tags = dropletInfo.Tags
+
+	return vmInfo, nil
 }

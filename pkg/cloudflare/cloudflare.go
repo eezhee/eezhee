@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	cf "github.com/cloudflare/cloudflare-go"
-	"github.com/eezhee/eezhee/pkg/common"
+	"github.com/eezhee/eezhee/pkg/core"
 )
 
 // DNSManager controls dns records for hosts
@@ -46,7 +46,7 @@ func Test(apiToken string) bool {
 	}
 
 	clusterName := "cluster1.k8s.rndguy.ca"
-	clusterDNSRecord := common.HostInfo{Name: clusterName, IP: "218.1.2.3"}
+	clusterDNSRecord := core.HostInfo{Name: clusterName, IP: "218.1.2.3"}
 
 	hostInfo, err := manager.GetHostRecord(clusterName)
 	if err != nil {
@@ -96,7 +96,7 @@ func (m *DNSManager) Init() bool {
 }
 
 // GetHostRecord will get details of dns record for a given host
-func (m *DNSManager) GetHostRecord(hostname string) (*common.HostInfo, error) {
+func (m *DNSManager) GetHostRecord(hostname string) (*core.HostInfo, error) {
 
 	//
 	baseDomain, err := getBaseDomain(hostname)
@@ -126,13 +126,13 @@ func (m *DNSManager) GetHostRecord(hostname string) (*common.HostInfo, error) {
 	}
 
 	// found a record
-	hostInfo := common.HostInfo{Name: recs[0].Name, IP: recs[0].Content, ID: recs[0].ID}
+	hostInfo := core.HostInfo{Name: recs[0].Name, IP: recs[0].Content, ID: recs[0].ID}
 
 	return &hostInfo, nil
 }
 
 // AddHostRecord will get details of dns record for a given host
-func (m *DNSManager) AddHostRecord(hostInfo common.HostInfo) error {
+func (m *DNSManager) AddHostRecord(hostInfo core.HostInfo) error {
 
 	// get zone id
 	zoneID, err := m.getZoneID(hostInfo.Name)
@@ -157,7 +157,7 @@ func (m *DNSManager) AddHostRecord(hostInfo common.HostInfo) error {
 }
 
 // UpdateHostRecord will update dns record for a given host
-func (m *DNSManager) UpdateHostRecord(hostInfo common.HostInfo) error {
+func (m *DNSManager) UpdateHostRecord(hostInfo core.HostInfo) error {
 
 	// get zone id
 	zoneID, err := m.getZoneID(hostInfo.Name)
@@ -177,7 +177,7 @@ func (m *DNSManager) UpdateHostRecord(hostInfo common.HostInfo) error {
 }
 
 // DeleteHostRecord will delete the given dns record at a provider
-func (m *DNSManager) DeleteHostRecord(hostInfo common.HostInfo) error {
+func (m *DNSManager) DeleteHostRecord(hostInfo core.HostInfo) error {
 
 	// get zone id
 	zoneID, err := m.getZoneID(hostInfo.Name)

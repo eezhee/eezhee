@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,14 @@ var listCmd = &cobra.Command{
 
 func listVMs() bool {
 
-	manager := digitalocean.NewManager()
+	// get app settings
+	appConfig := config.NewAppConfig()
+	err := appConfig.Load()
+	if err != nil {
+		return false
+	}
+
+	manager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
 
 	// get all VMs in our account
 	vmInfo, err := manager.ListVMs()

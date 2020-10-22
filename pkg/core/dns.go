@@ -1,4 +1,4 @@
-package common
+package core
 
 // HostInfo has DNS details of a host
 type HostInfo struct {
