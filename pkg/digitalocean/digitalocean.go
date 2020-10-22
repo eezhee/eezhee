@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/digitalocean/godo"
-	"github.com/eezhee/eezhee/pkg/eezhee"
+	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/go-ping/ping"
 )
 
@@ -133,7 +133,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 }
 
 // GetVMInfo will get details of a VM
-func (m *Manager) GetVMInfo(vmID int) (vmInfo eezhee.VMInfo, err error) {
+func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 
 	// get the latest VM info.  see if status active now
 	ctx := context.TODO()
@@ -150,9 +150,9 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo eezhee.VMInfo, err error) {
 }
 
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (eezhee.VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
 
-	var vmInfo eezhee.VMInfo
+	var vmInfo core.VMInfo
 
 	createRequest := &godo.DropletCreateRequest{
 		Name:   name,
@@ -183,7 +183,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 }
 
 // ListVMs will return a list of all VMs created by eezhee
-func (m *Manager) ListVMs() (vmInfo []eezhee.VMInfo, err error) {
+func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 
 	ctx := context.TODO()
 
@@ -224,16 +224,16 @@ func (m *Manager) DeleteVM(ID int) error {
 }
 
 // convert digitalocean droplet info into our generic format
-func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (eezhee.VMInfo, error) {
+func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error) {
 
-	var vmInfo eezhee.VMInfo
+	var vmInfo core.VMInfo
 
 	vmInfo.ID = dropletInfo.ID
 	vmInfo.Name = dropletInfo.Name
 	vmInfo.Memory = dropletInfo.Memory
 	vmInfo.VCPUs = dropletInfo.Vcpus
 	vmInfo.Disk = dropletInfo.Disk
-	vmInfo.Region = eezhee.RegionInfo{
+	vmInfo.Region = core.RegionInfo{
 		Name:     dropletInfo.Region.Name,
 		Slug:     dropletInfo.Region.Slug,
 		Features: dropletInfo.Region.Features,
@@ -241,7 +241,7 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (eezhee.VMInfo, erro
 	vmInfo.Status = dropletInfo.Status
 	// vmInfo.SizeSlug = dropletInfo.SizeSlug
 	vmInfo.CreatedAt = dropletInfo.Created
-	vmInfo.Image = eezhee.ImageInfo{
+	vmInfo.Image = core.ImageInfo{
 		ID:           dropletInfo.Image.ID,
 		Name:         dropletInfo.Image.Name,
 		Description:  dropletInfo.Image.Description,
@@ -250,30 +250,31 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (eezhee.VMInfo, erro
 		Slug:         dropletInfo.Image.Slug,
 		CreatedAt:    dropletInfo.Image.Created,
 	}
-	vmInfo.Size = eezhee.SizeInfo{
+	vmInfo.Size = core.SizeInfo{
 		Slug: dropletInfo.Size.Slug,
 	}
-	vmInfo.Networks = eezhee.NetworkInfo{
-		V4Info: []eezhee.V4NetworkInfo{},
-		V6Info: []eezhee.V6NetworkInfo{},
+	vmInfo.Networks = core.NetworkInfo{
+		V4Info: []core.V4NetworkInfo{},
+		V6Info: []core.V6NetworkInfo{},
 	}
+
 	for _, ipv4Info := range dropletInfo.Networks.V4 {
-		networkInfo := eezhee.V4NetworkInfo{
+		v4NetworkInfo := core.V4NetworkInfo{
 			IPAddress: ipv4Info.IPAddress,
 			Netmask:   ipv4Info.Netmask,
 			Gateway:   ipv4Info.Gateway,
 			Type:      ipv4Info.Type,
 		}
-		vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, networkInfo)
+		vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
 	}
 	for _, ipv6Info := range dropletInfo.Networks.V6 {
-		networkInfo := eezhee.V6NetworkInfo{
+		v6NetworkInfo := core.V6NetworkInfo{
 			IPAddress: ipv6Info.IPAddress,
 			Netmask:   ipv6Info.Netmask,
 			Gateway:   ipv6Info.Gateway,
 			Type:      ipv6Info.Type,
 		}
-		vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, networkInfo)
+		vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
 	}
 
 	vmInfo.VPCUUID = dropletInfo.VPCUUID
