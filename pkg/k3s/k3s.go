@@ -235,7 +235,8 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 		return false
 	}
 
-	fmt.Println("wrote ./kubeconfig to disk")
+	fmt.Println("cluster is ready")
+	fmt.Println("you can access using `kubectl --kubeconfig .\\kubeconfig get pods`")
 
 	return true
 }
