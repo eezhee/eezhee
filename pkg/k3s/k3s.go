@@ -1,13 +1,16 @@
 package k3s
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/eezhee/eezhee/pkg/github"
 	homedir "github.com/mitchellh/go-homedir"
@@ -130,6 +133,61 @@ func (m *Manager) GetChannels() (channels []string, err error) {
 	sort.Sort(sort.Reverse(sort.StringSlice(channels)))
 
 	return channels, nil
+}
+
+// ChannelList is a list of k3s release channels
+type ChannelList struct {
+	Type         string        `json:"type"`
+	ResourceType string        `json:"resourceType"`
+	Data         []ChannelInfo `json:"data"`
+}
+
+// ChannelInfo has info about a specific k3s release channel
+type ChannelInfo struct {
+	ID     string `json:"id"`
+	Type   string `json:"type"`
+	Name   string `json:"name"`
+	Latest string `json:"latest"`
+}
+
+// GetChannels2 is to get latest & stable versions
+func (m *Manager) GetChannels2() error {
+
+	// setup api request
+	apiURL := "https://update.k3s.io/v1-release/channels"
+	request, err := http.NewRequest("GET", apiURL, nil)
+	// request.Header.Add("User-agent", "eezhee")
+	request.Header.Add("Accept", "application/json")
+
+	// make the api request
+	client := &http.Client{Timeout: time.Second * 10}
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+		return err
+	}
+	defer response.Body.Close()
+
+	// get channel data
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	// parse the data
+	var channelList ChannelList
+
+	err = json.Unmarshal([]byte(data), &channelList)
+	if err != nil {
+		return err
+	}
+
+	// numChannels := len(channelList.Data)
+	for _, channel := range channelList.Data {
+		fmt.Println(channel.Name, channel.Latest)
+	}
+
+	return nil
 }
 
 // GetLatestVersion of k3s that is available for a given channel

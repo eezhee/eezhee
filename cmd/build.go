@@ -36,9 +36,15 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
+	k3sManager := k3s.NewManager()
+	err := k3sManager.GetChannels2()
+	if err != nil {
+		return err
+	}
+
 	// get app settings
 	appConfig := config.NewAppConfig()
-	err := appConfig.Load()
+	err = appConfig.Load()
 	if err != nil {
 		return err
 	}
@@ -147,18 +153,13 @@ func buildCluster() error {
 	fmt.Println("VM is ready")
 
 	// install k3s on the VM
-	k3sManager := k3s.NewManager()
+	k3sManager = k3s.NewManager()
 	k3sChannels, err := k3sManager.GetChannels()
 	if err != nil {
 		return err
 	}
 	k3sVersion, _ := k3sManager.GetLatestVersion(k3sChannels[0])
 	fmt.Println("installing k3s", k3sVersion)
-
-	// really want the latest version of a channel
-	// latest/stable/v1.18
-	// https://update.k3s.io/v1-release/channels
-	// then want to see if our version if most recent.  if not allow upgrade
 
 	// time to install k3s on the new VM
 	version := k3sVersion + "+k3s1"
