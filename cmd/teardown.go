@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/config"
@@ -42,7 +43,7 @@ func teardownVM() error {
 	// see if there is a state file (so we know what we're supposed to teardown)
 	deployStateFile := config.NewDeployState()
 	if !deployStateFile.FileExists() {
-		return errors.New("app is not deployed so nothing to teardown")
+		return errors.New("app is not deployed. nothing to teardown")
 	}
 
 	// load state file
@@ -71,11 +72,21 @@ func teardownVM() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("k3s cluster (and VM) deleted")
 
+	// remove the kubeconfig file
+	kubeConfigFile, _ := filepath.Abs("kubeconfig")
+	err = os.Remove(kubeConfigFile)
+	if err == nil {
+		fmt.Println("removed kubeconfig for cluster")
+	}
+
+	// remove the deploy state file
 	err = deployStateFile.Delete()
 	if err != nil {
 		return err
 	}
+	fmt.Println("deploy-state file deleted")
 
 	return nil
 }

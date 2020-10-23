@@ -86,13 +86,10 @@ func buildCluster() error {
 	default:
 		return errors.New("only can deploy to digitalocean right now")
 	}
+	fmt.Println("deplying to", deployConfig.Cloud)
 
 	// make sure we can talk to DigitalOcean
 	DOManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
-	// haveRequirements, err := DOManager.CheckRequirements()
-	// if !haveRequirements {
-	// 	return err
-	// }
 
 	// make sure this ssh key is loaded into DigitalOcean
 	uploaded, err := DOManager.IsSSHKeyUploaded(sshFingerprint)
@@ -102,17 +99,21 @@ func buildCluster() error {
 
 	// set rest of details for new VM
 	if len(deployConfig.Region) == 0 {
+		fmt.Println("selecting closest region")
 		deployConfig.Region, err = DOManager.SelectClosestRegion()
 		if err != nil {
 			return err
 		}
+		fmt.Println(deployConfig.Region, "is closest")
 	}
+
 	if len(deployConfig.Size) == 0 {
 		deployConfig.Size = "s-1vcpu-1gb"
 	}
 	imageName := "ubuntu-20-04-x64"
 
 	// time to create the VM
+	fmt.Println("creating a VM")
 	vmInfo, err := DOManager.CreateVM(
 		deployConfig.Name, imageName, deployConfig.Size,
 		deployConfig.Region, deployConfig.SSHFingerprint,
@@ -139,7 +140,10 @@ func buildCluster() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("vm now ready to use")
+	fmt.Println("VM is ready")
+
+	// pause as ssh might not be ready
+	time.Sleep(1000 * time.Millisecond)
 
 	// install k3s on the VM
 	k3sManager := k3s.NewManager()
@@ -148,6 +152,7 @@ func buildCluster() error {
 		return err
 	}
 	k3sVersion, _ := k3sManager.GetLatestVersion(k3sChannels[0])
+	fmt.Println("installing k3s", k3sVersion)
 
 	// really want the latest version of a channel
 	// latest/stable/v1.18

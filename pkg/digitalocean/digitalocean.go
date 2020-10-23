@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/digitalocean/godo"
 	"github.com/eezhee/eezhee/pkg/core"
@@ -78,12 +77,12 @@ type regionPingTimes struct {
 func getPingTime(ipAddress string) (pingTime int64, err error) {
 
 	pinger, err := ping.NewPinger(ipAddress)
-	pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
+	// pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
 	if err != nil {
 		fmt.Println(err)
 		return 0, err
 	}
-	pinger.Count = 5
+	pinger.Count = 3
 	err = pinger.Run() // blocks until finished
 	if err != nil {
 		return 0, err

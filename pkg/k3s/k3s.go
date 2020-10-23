@@ -202,7 +202,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 		fmt.Println(output)
 		return false
 	}
-	// fmt.Println(output)
+	fmt.Println("k3s installed on VM")
 
 	// get kubectl config
 	getK3sConfigCommand := "cat /etc/rancher/k3s/k3s.yaml\n"
@@ -226,8 +226,6 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 	)
 	kubectlConfig := configUpdater.Replace(output)
 
-	fmt.Println(kubectlConfig)
-
 	// save output to kubectrl config file
 	// TODO: option to merge?
 	absPath, _ := filepath.Abs("kubeconfig")
@@ -236,6 +234,8 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 		fmt.Println(err)
 		return false
 	}
+
+	fmt.Println("wrote ./kubeconfig to disk")
 
 	return true
 }
@@ -256,7 +256,7 @@ func runCommand(conn *ssh.Client, command string) (outputStr string, err error) 
 		fmt.Println(outputStr)
 		return outputStr, err
 	}
-	fmt.Println(outputStr)
+	// fmt.Println(outputStr)
 
 	return outputStr, nil
 }
