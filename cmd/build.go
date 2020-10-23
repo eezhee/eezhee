@@ -140,10 +140,11 @@ func buildCluster() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("VM is ready")
 
 	// pause as ssh might not be ready
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(2 * time.Second)
+
+	fmt.Println("VM is ready")
 
 	// install k3s on the VM
 	k3sManager := k3s.NewManager()
