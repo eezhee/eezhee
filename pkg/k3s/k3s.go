@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/github"
@@ -17,14 +18,10 @@ import (
 //   looks like the github graphql api needs an auth token, no matter which data you query
 //   the REST API allows some the tags endpoint to be queried without an auth token
 
-// TODO:
-//    refactor getverion code
-//    sort results into a map
-//    have way to get latest, or latest for a version (ie 1.18)
-//    use cases:
-//      build latest version of k3s
-//      build specific version of k3s
-//      check if there is a newer version of a stream (ie 1.18)
+// use cases:
+//  	build latest version of k3s
+//		build specific version of k3s
+// 		check if there is a newer version of a stream (ie 1.18)
 
 // Version of k3s
 type Version struct {
@@ -129,8 +126,10 @@ func (m *Manager) GetChannels() (channels []string, err error) {
 		channels = append(channels, channel)
 	}
 
-	return channels, nil
+	// now sort in descending order
+	sort.Sort(sort.Reverse(sort.StringSlice(channels)))
 
+	return channels, nil
 }
 
 // GetLatestVersion of k3s that is available for a given channel
