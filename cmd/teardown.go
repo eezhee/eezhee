@@ -76,17 +76,17 @@ func teardownVM() error {
 
 	// remove the kubeconfig file
 	kubeConfigFile, _ := filepath.Abs("kubeconfig")
-	err = os.Remove(kubeConfigFile)
-	if err == nil {
-		fmt.Println("removed kubeconfig for cluster")
-	}
+	_ = os.Remove(kubeConfigFile)
+	// if err == nil {
+	// 	fmt.Println("removed kubeconfig for cluster")
+	// }
 
 	// remove the deploy state file
 	err = deployStateFile.Delete()
 	if err != nil {
 		return err
 	}
-	fmt.Println("deploy-state file deleted")
+	// fmt.Println("deploy-state file deleted")
 
 	return nil
 }

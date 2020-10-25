@@ -53,12 +53,16 @@ func (r *Release) Parse(releaseStr string) (err error) {
 		return err
 	}
 
-	r.FullName = releaseStr
-
 	// see if has k3s release info ( +k3s1)
-	parts := strings.Split(r.FullName, "+")
+	parts := strings.Split(releaseStr, "+")
 	if len(parts) > 1 {
 		r.K3sRelease = parts[1]
+	}
+
+	// see if has extra version info (ie release candidate 'RC')
+	parts = strings.Split(parts[0], "-")
+	if len(parts) > 1 {
+		r.Extra = parts[1]
 	}
 	r.Name = parts[0]
 
@@ -69,10 +73,22 @@ func (r *Release) Parse(releaseStr string) (err error) {
 	r.Minor = parts[1]
 	r.Channel = "v" + r.Major + "." + r.Minor
 
-	parts = strings.Split(parts[2], "-")
-	r.Patch = parts[0]
-	if len(parts) > 1 {
-		r.Extra = parts[1]
+	// do we have a patch number?
+	if len(parts) > 2 {
+		r.Patch = parts[2]
+	}
+
+	// build the full name
+	if len(r.Patch) > 0 {
+		r.FullName = r.Channel + "." + r.Patch
+	} else {
+		r.FullName = r.Channel
+	}
+	if len(r.Extra) > 0 {
+		r.FullName = r.FullName + "-" + r.Extra
+	}
+	if len(r.K3sRelease) > 0 {
+		r.FullName = r.FullName + "+" + r.K3sRelease
 	}
 
 	return err
@@ -211,6 +227,71 @@ func (ri *ReleaseInfo) GetLatestRelease(desiredChannel string) (latestRelease st
 	latestRelease = channel.Latest
 
 	return latestRelease, nil
+}
+
+// Translate will take a channel name or a specific release
+// 'stable', 'latest', 'v1.18', 'v1.18.2', 'v1.18.2+k3s1'
+func (ri *ReleaseInfo) Translate(desiredRelease string) (release string, err error) {
+
+	// if format is 1.xx, add 'v' in front so 'v1.xx'
+	firstChar := desiredRelease[0:1]
+	if (firstChar >= "0") && (firstChar <= "9") {
+		desiredRelease = "v" + desiredRelease
+	}
+
+	// see if a channel was specified
+	channel, err := ri.GetChannel(desiredRelease)
+	if err == nil {
+		// it is a channel so convert to latest release for that channel
+		return channel.Latest, nil
+	}
+
+	// we support 2 formats: v1.18.1 & v1.18.1+k3s1
+	// if k3s version missing, add it
+	if !strings.Contains(desiredRelease, "+") {
+		desiredRelease = desiredRelease + "+k3s1"
+	}
+
+	// is release in a reasonable format
+	var releaseDetails Release
+	err = releaseDetails.Parse(desiredRelease)
+	if err != nil {
+		return "", errors.New("invalid release format")
+	}
+
+	// see if the release actually exists
+	exists := ri.ReleaseExists(desiredRelease)
+	if !exists {
+		return "", errors.New("invalid release")
+	}
+
+	return releaseDetails.FullName, nil
+}
+
+// ReleaseExists will see if given release exists and if so, returns details
+func (ri *ReleaseInfo) ReleaseExists(desiredRelease string) bool {
+
+	var releaseInfo Release
+
+	err := releaseInfo.Parse(desiredRelease)
+	if err != nil {
+		return false
+	}
+
+	// get all releases for the channel that desired release is in
+	releases, err := ri.GetReleases(releaseInfo.Channel)
+	if err != nil {
+		return false
+	}
+
+	// see if we can find the desired release
+	for _, release := range releases {
+		if strings.Compare(release, desiredRelease) == 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 // GetReleases will return all the releases for a given channel

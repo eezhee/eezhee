@@ -88,14 +88,21 @@ func buildCluster() error {
 	}
 	fmt.Println("deplying to", deployConfig.Cloud)
 
-	// set which version of k3s to install
+	// check what release of k3s should be used
+	// default to stable if not set
 	if len(deployConfig.K3sVersion) == 0 {
 		deployConfig.K3sVersion = "stable"
 	}
 
-	// validate k3sversion
-	// needs to be 'stable', 'latest', validChannelName, validReleaseName
-	// if not validReleaseName, need to convert to actualReleaseName
+	// make sure it's valid and if its a pinned release or a channel,
+	// convert to actual release to be installed
+	// needs to be 'stable', 'latest', validChannelName (v1.19) or validReleaseName (v1.19.3)
+	k3sManager := k3s.NewManager()
+	release, err := k3sManager.Releases.Translate(deployConfig.K3sVersion)
+	if err != nil {
+		return err
+	}
+	deployConfig.K3sVersion = release
 
 	// make sure we can talk to DigitalOcean
 	DOManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
@@ -156,8 +163,9 @@ func buildCluster() error {
 	fmt.Println("VM is ready")
 
 	// install k3s on the VM
-	k3sManager := k3s.NewManager()
-	stableInfo, err := k3sManager.Releases.GetChannel("stable")
+	// k3sManager := k3s.NewManager()
+	// stableInfo, err := k3sManager.Releases.GetChannel("stable")
+	stableInfo, err := k3sManager.Releases.GetChannel(deployConfig.K3sVersion)
 	if err != nil {
 		return err
 	}
