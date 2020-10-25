@@ -4,3 +4,4 @@ eezhee
 release
 kubeconfig
 *.yaml
+eezhee-sha256sum.sha

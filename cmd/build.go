@@ -11,6 +11,7 @@ import (
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
+	"github.com/eezhee/eezhee/pkg/linode"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -60,6 +61,15 @@ func buildCluster() error {
 			// there is a file but we couldn't load it
 			return err
 		}
+	}
+
+	VMManager := linode.NewManager(appConfig.LinodeAPIKey)
+	if VMManager == nil {
+		return errors.New("could not create linode client")
+	}
+	_, err = VMManager.GetVMInfo(1)
+	if err != nil {
+		return err
 	}
 
 	// set name for cluster - default to project & branch name

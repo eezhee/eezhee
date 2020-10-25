@@ -14,6 +14,7 @@ type AppConfig struct {
 	v                  *viper.Viper // viper object
 	DigitalOceanAPIKey string
 	CloudFlareAPIKey   string
+	LinodeAPIKey       string
 }
 
 // NewAppConfig will create a new deploy file object
@@ -69,6 +70,7 @@ func (a *AppConfig) Load() error {
 
 	a.DigitalOceanAPIKey = a.v.GetString("digitalocean-api-key")
 	a.CloudFlareAPIKey = a.v.GetString("cloudflare-api-key")
+	a.LinodeAPIKey = a.v.GetString("linode-api-key")
 
 	return nil
 }
@@ -81,6 +83,9 @@ func (a *AppConfig) Save() error {
 	}
 	if len(a.CloudFlareAPIKey) > 0 {
 		a.v.Set("cloudflare-api-key", a.CloudFlareAPIKey)
+	}
+	if len(a.LinodeAPIKey) > 0 {
+		a.v.Set("linode-api-key", a.CloudFlareAPIKey)
 	}
 
 	err := a.v.WriteConfig()
