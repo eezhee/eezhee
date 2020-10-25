@@ -84,6 +84,9 @@ func (ri *ReleaseInfo) LoadChannels() error {
 	// setup api request
 	apiURL := k3sUpdateAPI + k3sChannelsEndpoint
 	request, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return err
+	}
 	request.Header.Add("Accept", "application/json")
 
 	// make the api request
@@ -142,7 +145,11 @@ func (ri *ReleaseInfo) LoadReleases() error {
 
 		// parse release name
 		var release Release
-		release.Parse(tagName)
+		err = release.Parse(tagName)
+		if err != nil {
+			// not in expected format
+			continue
+		}
 		if len(release.K3sRelease) == 0 {
 			// needs to have +k3sx in release name
 			continue

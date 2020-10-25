@@ -33,8 +33,14 @@ type Manager struct {
 func NewManager() *Manager {
 	m := new(Manager)
 
-	m.Releases.LoadChannels()
-	m.Releases.LoadReleases()
+	err := m.Releases.LoadChannels()
+	if err != nil {
+		fmt.Println("error: could not load list of k3s channels")
+	}
+	err = m.Releases.LoadReleases()
+	if err != nil {
+		fmt.Println("error: could not load list of k3s releases")
+	}
 
 	return m
 }

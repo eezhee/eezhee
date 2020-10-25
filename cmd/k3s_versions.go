@@ -47,7 +47,11 @@ func getK3sVersions() error {
 		if err != nil {
 			fmt.Println("invalid channel name")
 		}
-		releaseInfo.Parse(channelInfo.Latest)
+		err = releaseInfo.Parse(channelInfo.Latest)
+		if err != nil {
+			// not in expected format
+			continue
+		}
 
 		fmt.Printf("%s: ", channel)
 		fmt.Printf(" %s", releaseInfo.Name)
@@ -76,7 +80,11 @@ func getK3sVersions() error {
 
 		for _, release := range releases {
 
-			releaseInfo.Parse(release)
+			err = releaseInfo.Parse(release)
+			if err != nil {
+				// not in expected format
+				continue
+			}
 			fmt.Printf(" %s", releaseInfo.Name)
 		}
 		fmt.Printf("\n")
