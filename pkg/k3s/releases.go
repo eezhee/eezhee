@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/github"
@@ -77,8 +78,8 @@ func (r *Release) Parse(releaseStr string) (err error) {
 	return err
 }
 
-// GetChannels will get the channel details from updates.k3s.io
-func (ri *ReleaseInfo) GetChannels() error {
+// LoadChannels will get the channel details from updates.k3s.io
+func (ri *ReleaseInfo) LoadChannels() error {
 
 	// setup api request
 	apiURL := k3sUpdateAPI + k3sChannelsEndpoint
@@ -108,8 +109,8 @@ func (ri *ReleaseInfo) GetChannels() error {
 	return nil
 }
 
-// GetReleases will get a list of all
-func (ri *ReleaseInfo) GetReleases() error {
+// LoadReleases will get a list of all
+func (ri *ReleaseInfo) LoadReleases() error {
 
 	// see if we already have the versions list
 	if ri.Releases != nil {
@@ -174,4 +175,47 @@ func (ri *ReleaseInfo) GetChannel(desiredChannel string) (channel Channel, err e
 		}
 	}
 	return channel, errors.New("invalid channel name")
+}
+
+// GetChannels returns array of all valid channel names
+func (ri *ReleaseInfo) GetChannels() (channels []string, err error) {
+
+	// go throgh all channels and build a list of all their names
+	for _, channel := range ri.Channels {
+		channels = append(channels, channel.Name)
+	}
+
+	// now sort in descending order
+	sort.Sort(sort.Reverse(sort.StringSlice(channels)))
+
+	return channels, nil
+}
+
+// GetLatestRelease of k3s that is available for a given channel
+func (ri *ReleaseInfo) GetLatestRelease(desiredChannel string) (latestRelease string, err error) {
+
+	// is channel valid
+	channel, err := ri.GetChannel(desiredChannel)
+	if err != nil {
+		return "", errors.New("invalid channel name")
+	}
+
+	// get a list of tracks to see which is the
+	latestRelease = channel.Latest
+
+	return latestRelease, nil
+}
+
+// GetReleases will return all the releases for a given channel
+func (ri *ReleaseInfo) GetReleases(desiredChannel string) (releases []string, err error) {
+
+	if len(desiredChannel) == 0 {
+		return nil, errors.New("no channel specified")
+	}
+
+	if releases, ok := ri.Releases[desiredChannel]; ok {
+		return releases, nil
+	}
+
+	return nil, errors.New("invalid channel name")
 }

@@ -36,9 +36,10 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
+	// temp start
 	var releases k3s.ReleaseInfo
 
-	err := releases.GetChannels()
+	err := releases.LoadChannels()
 	if err != nil {
 		return err
 	}
@@ -46,10 +47,11 @@ func buildCluster() error {
 	fmt.Println("latest: ", latest.Latest)
 	stable, err := releases.GetChannel("stable")
 	fmt.Println("stable: ", stable.Latest)
-	err = releases.GetReleases()
+	err = releases.LoadReleases()
 	if err != nil {
 		return err
 	}
+	// temp end
 
 	// get app settings
 	appConfig := config.NewAppConfig()
@@ -163,11 +165,11 @@ func buildCluster() error {
 
 	// install k3s on the VM
 	k3sManager := k3s.NewManager()
-	k3sChannels, err := k3sManager.GetChannels()
+	stableInfo, err := k3sManager.Releases.GetChannel("stable")
 	if err != nil {
 		return err
 	}
-	k3sVersion, _ := k3sManager.GetLatestVersion(k3sChannels[0])
+	k3sVersion := stableInfo.Latest
 	fmt.Println("installing k3s", k3sVersion)
 
 	// time to install k3s on the new VM
