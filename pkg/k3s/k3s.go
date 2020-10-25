@@ -6,145 +6,43 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
+	"time"
 
-	"github.com/eezhee/eezhee/pkg/github"
 	homedir "github.com/mitchellh/go-homedir"
 	"golang.org/x/crypto/ssh"
 )
 
-// notes:
-//   looks like the github graphql api needs an auth token, no matter which data you query
-//   the REST API allows some the tags endpoint to be queried without an auth token
+const (
+	k3sUpdateAPI        = "https://update.k3s.io"
+	k3sChannelsEndpoint = "/v1-release/channels"
+	apiTimeout          = 10 * time.Second
+)
 
 // use cases:
 //  	build latest version of k3s
 //		build specific version of k3s
 // 		check if there is a newer version of a stream (ie 1.18)
 
-// Version of k3s
-type Version struct {
-	Track   string // ie. 1.19
-	Major   string
-	Minor   string
-	Release string
-}
-
 // Manager will handle installation of k3s
 type Manager struct {
-	Releases map[string][]string // list of available k3s versions, groups by track (ie 1.19)
+	Releases ReleaseInfo
 }
 
 // NewManager will create a new k3s manager
 func NewManager() *Manager {
 	m := new(Manager)
 
-	return m
-}
-
-// parseVersion will take a given version string into parse into its components
-// currently support version in the following format: v1.19.2
-func parseVersion(versionStr string) (version Version, err error) {
-
-	// v1.19.2
-	versionParts := strings.Split(versionStr, ".")
-
-	version.Major = versionParts[0]
-	version.Major = version.Major[1:len(version.Major)]
-	version.Minor = versionParts[1]
-	version.Release = versionParts[2]
-	version.Track = version.Major + "." + version.Minor
-
-	return version, err
-}
-
-// GetVersions of K3S that are available
-func (m *Manager) GetVersions() (map[string][]string, error) {
-
-	// see if we already have the versions list
-	if m.Releases != nil {
-		return m.Releases, nil
-	}
-
-	m.Releases = make(map[string][]string)
-
-	releases, err := github.GetRepoReleases("rancher", "k3s")
+	err := m.Releases.LoadChannels()
 	if err != nil {
-		return nil, err
+		fmt.Println("error: could not load list of k3s channels")
+	}
+	err = m.Releases.LoadReleases()
+	if err != nil {
+		fmt.Println("error: could not load list of k3s releases")
 	}
 
-	// go through releases and filter out any non-final (non-RC) releases
-	for _, release := range releases {
-
-		// check tag name.  note, can't use 'releaseName' as is blank for older releases (pre-2020)
-		tagName := release.TagName
-		// releaseName := release.Name  		// older releases have this blank
-
-		// parse release name
-		fields := strings.Split(tagName, "+")
-		// releaseParts[1] should always be 'k3s1'
-		releaseParts := strings.Split(fields[0], "-")
-		if len(releaseParts) == 1 {
-			// only want final releases
-			fullVersion := releaseParts[0]
-			version, err := parseVersion(fullVersion)
-			if err != nil {
-				// skip this version
-				fmt.Printf("could not parse version %s\n", fullVersion)
-			}
-
-			// sort into streams   1.16, 1.17, etc
-			// ignore version before 1.16
-			// note versions in each track will be in desending order (ie 1.19.2, 1.19.1)
-			if strings.Compare(version.Track, "1.16") >= 0 {
-				m.Releases[version.Track] = append(m.Releases[version.Track], fullVersion)
-			}
-
-			// } else {
-			// ignore non-final releases
-			// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
-		}
-	}
-
-	return m.Releases, nil
-}
-
-// GetChannels returns array of all valid channel names
-func (m *Manager) GetChannels() (channels []string, err error) {
-
-	// make sure we have the list of versions
-	if m.Releases == nil {
-		_, err := m.GetVersions()
-		if err != nil {
-			return channels, err
-		}
-	}
-
-	// go throgh all channels and build a list of all their names
-	for channel := range m.Releases {
-		channels = append(channels, channel)
-	}
-
-	// now sort in descending order
-	sort.Sort(sort.Reverse(sort.StringSlice(channels)))
-
-	return channels, nil
-}
-
-// GetLatestVersion of k3s that is available for a given channel
-func (m *Manager) GetLatestVersion(channel string) (latestRelease string, err error) {
-
-	// is channel valid
-	_, exists := m.Releases[channel]
-	if !exists {
-		return "", errors.New("invalid channel name")
-	}
-
-	// get a list of tracks to see which is the
-	latestRelease = m.Releases[channel][0]
-
-	return latestRelease, nil
+	return m
 }
 
 // CheckRequirements will make sure required components are installed

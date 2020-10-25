@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"sort"
+	"strings"
 
 	"github.com/eezhee/eezhee/pkg/k3s"
 	"github.com/spf13/cobra"
@@ -30,29 +30,65 @@ func getK3sVersions() error {
 
 	k3sManager := k3s.NewManager()
 
-	// get the possible versions
-	releaseVersions, err := k3sManager.GetVersions()
+	// get list of channels
+	channels, err := k3sManager.Releases.GetChannels()
 	if err != nil {
 		return err
 	}
 
-	// note, since we are using a map, tracks are not sorted
-	// get a list of tracks
-	// sort
-	// use that to print results in decreasing version #
-	var tracks []string
-	for track := range releaseVersions {
-		tracks = append(tracks, track)
-	}
-	sort.Sort(sort.Reverse(sort.StringSlice(tracks)))
-
 	// print out results to user
-	for _, track := range tracks {
-		fmt.Printf("%s: ", track)
-		for _, version := range releaseVersions[track] {
-			fmt.Printf(" %s", version)
+	var releaseInfo k3s.Release
+
+	// start with the pinned releases
+	pinnedReleases := []string{"latest", "stable"}
+	for _, channel := range pinnedReleases {
+
+		channelInfo, err := k3sManager.Releases.GetChannel(channel)
+		if err != nil {
+			fmt.Println("invalid channel name")
+		}
+		err = releaseInfo.Parse(channelInfo.Latest)
+		if err != nil {
+			// not in expected format
+			continue
+		}
+
+		fmt.Printf("%s: ", channel)
+		fmt.Printf(" %s", releaseInfo.Name)
+		fmt.Printf("\n")
+	}
+
+	// print out the rest of the channels
+	for _, channel := range channels {
+
+		// ignore testing channels
+		if strings.Contains(channel, "testing") {
+			continue
+		}
+		// ignore 'stable' and 'latest'
+		if channel[0:1] != "v" {
+			continue
+		}
+
+		fmt.Printf("%s: ", channel)
+
+		releases, err := k3sManager.Releases.GetReleases(channel)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		for _, release := range releases {
+
+			err = releaseInfo.Parse(release)
+			if err != nil {
+				// not in expected format
+				continue
+			}
+			fmt.Printf(" %s", releaseInfo.Name)
 		}
 		fmt.Printf("\n")
+
 	}
 
 	return nil

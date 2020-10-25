@@ -1,5 +1,9 @@
 package github
 
+// notes:
+//   looks like the github graphql api needs an auth token, no matter which data you query
+//   the REST API allows some the tags endpoint to be queried without an auth token
+
 import (
 	"encoding/json"
 	"fmt"

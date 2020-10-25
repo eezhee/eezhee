@@ -88,6 +88,22 @@ func buildCluster() error {
 	}
 	fmt.Println("deplying to", deployConfig.Cloud)
 
+	// check what release of k3s should be used
+	// default to stable if not set
+	if len(deployConfig.K3sVersion) == 0 {
+		deployConfig.K3sVersion = "stable"
+	}
+
+	// make sure it's valid and if its a pinned release or a channel,
+	// convert to actual release to be installed
+	// needs to be 'stable', 'latest', validChannelName (v1.19) or validReleaseName (v1.19.3)
+	k3sManager := k3s.NewManager()
+	release, err := k3sManager.Releases.Translate(deployConfig.K3sVersion)
+	if err != nil {
+		return err
+	}
+	deployConfig.K3sVersion = release
+
 	// make sure we can talk to DigitalOcean
 	DOManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
 
@@ -146,33 +162,27 @@ func buildCluster() error {
 
 	fmt.Println("VM is ready")
 
-	// install k3s on the VM
-	k3sManager := k3s.NewManager()
-	k3sChannels, err := k3sManager.GetChannels()
-	if err != nil {
-		return err
-	}
-	k3sVersion, _ := k3sManager.GetLatestVersion(k3sChannels[0])
-	fmt.Println("installing k3s", k3sVersion)
-
-	// really want the latest version of a channel
-	// latest/stable/v1.18
-	// https://update.k3s.io/v1-release/channels
-	// then want to see if our version if most recent.  if not allow upgrade
-
-	// time to install k3s on the new VM
-	version := k3sVersion + "+k3s1"
-	k3sManager.Install(vmPublicIP, version, deployConfig.Name)
-
-	// done, cluster up and running
-
-	// save key details in state file
+	// save current state
 	deployState.Cloud = deployConfig.Cloud
 	deployState.ID = vmInfo.ID
 	deployState.Name = vmInfo.Name
 	deployState.Region = vmInfo.Region.Slug
 	deployState.Size = vmInfo.Size.Slug
 	deployState.IP = vmPublicIP
+	deployState.SSHFingerprint = deployConfig.SSHFingerprint
+	err = deployState.Save()
+	if err != nil {
+		return err
+	}
+
+	// install k3s on the VM
+	k3sVersion := deployConfig.K3sVersion
+	fmt.Println("installing k3s release", k3sVersion)
+	k3sManager.Install(vmPublicIP, k3sVersion, deployConfig.Name)
+
+	// done, cluster up and running
+
+	// update state file & re-save
 	deployState.K3sVersion = k3sVersion
 	err = deployState.Save()
 	if err != nil {
