@@ -162,28 +162,27 @@ func buildCluster() error {
 
 	fmt.Println("VM is ready")
 
-	// install k3s on the VM
-	// k3sManager := k3s.NewManager()
-	// stableInfo, err := k3sManager.Releases.GetChannel("stable")
-	stableInfo, err := k3sManager.Releases.GetChannel(deployConfig.K3sVersion)
-	if err != nil {
-		return err
-	}
-	k3sVersion := stableInfo.Latest
-	fmt.Println("installing k3s release", k3sVersion)
-
-	// time to install k3s on the new VM
-	k3sManager.Install(vmPublicIP, k3sVersion, deployConfig.Name)
-
-	// done, cluster up and running
-
-	// save key details in state file
+	// save current state
 	deployState.Cloud = deployConfig.Cloud
 	deployState.ID = vmInfo.ID
 	deployState.Name = vmInfo.Name
 	deployState.Region = vmInfo.Region.Slug
 	deployState.Size = vmInfo.Size.Slug
 	deployState.IP = vmPublicIP
+	deployState.SSHFingerprint = deployConfig.SSHFingerprint
+	err = deployState.Save()
+	if err != nil {
+		return err
+	}
+
+	// install k3s on the VM
+	k3sVersion := deployConfig.K3sVersion
+	fmt.Println("installing k3s release", k3sVersion)
+	k3sManager.Install(vmPublicIP, k3sVersion, deployConfig.Name)
+
+	// done, cluster up and running
+
+	// update state file & re-save
 	deployState.K3sVersion = k3sVersion
 	err = deployState.Save()
 	if err != nil {
