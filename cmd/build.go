@@ -36,26 +36,9 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
-	// temp start
-	var releases k3s.ReleaseInfo
-
-	err := releases.LoadChannels()
-	if err != nil {
-		return err
-	}
-	latest, err := releases.GetChannel("latest")
-	fmt.Println("latest: ", latest.Latest)
-	stable, err := releases.GetChannel("stable")
-	fmt.Println("stable: ", stable.Latest)
-	err = releases.LoadReleases()
-	if err != nil {
-		return err
-	}
-	// temp end
-
 	// get app settings
 	appConfig := config.NewAppConfig()
-	err = appConfig.Load()
+	err := appConfig.Load()
 	if err != nil {
 		return err
 	}
@@ -104,6 +87,15 @@ func buildCluster() error {
 		return errors.New("only can deploy to digitalocean right now")
 	}
 	fmt.Println("deplying to", deployConfig.Cloud)
+
+	// set which version of k3s to install
+	if len(deployConfig.K3sVersion) == 0 {
+		deployConfig.K3sVersion = "stable"
+	}
+
+	// validate k3sversion
+	// needs to be 'stable', 'latest', validChannelName, validReleaseName
+	// if not validReleaseName, need to convert to actualReleaseName
 
 	// make sure we can talk to DigitalOcean
 	DOManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
@@ -170,11 +162,10 @@ func buildCluster() error {
 		return err
 	}
 	k3sVersion := stableInfo.Latest
-	fmt.Println("installing k3s", k3sVersion)
+	fmt.Println("installing k3s release", k3sVersion)
 
 	// time to install k3s on the new VM
-	version := k3sVersion + "+k3s1"
-	k3sManager.Install(vmPublicIP, version, deployConfig.Name)
+	k3sManager.Install(vmPublicIP, k3sVersion, deployConfig.Name)
 
 	// done, cluster up and running
 

@@ -16,7 +16,7 @@ type DeployConfig struct {
 	Region         string       // where to deploy the cluster
 	Size           string       // VM size
 	SSHFingerprint string       // which ssh key to allow to acces the VM(s)
-	K3sVersion     string       // version of k3s to use
+	K3sVersion     string       // version of k3s to use. ie: latest, stable, 1.18, 1.18.3
 }
 
 // NewDeployConfig will create a new deploy file object

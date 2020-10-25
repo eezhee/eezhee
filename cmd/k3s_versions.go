@@ -36,37 +36,50 @@ func getK3sVersions() error {
 		return err
 	}
 
-	// sort.Sort(sort.Reverse(sort.StringSlice(channels)))
-
 	// print out results to user
+	var releaseInfo k3s.Release
+
+	// start with the pinned releases
+	pinnedReleases := []string{"latest", "stable"}
+	for _, channel := range pinnedReleases {
+
+		channelInfo, err := k3sManager.Releases.GetChannel(channel)
+		if err != nil {
+			fmt.Println("invalid channel name")
+		}
+		releaseInfo.Parse(channelInfo.Latest)
+
+		fmt.Printf("%s: ", channel)
+		fmt.Printf(" %s", releaseInfo.Name)
+		fmt.Printf("\n")
+	}
+
+	// print out the rest of the channels
 	for _, channel := range channels {
 
 		// ignore testing channels
 		if strings.Contains(channel, "testing") {
 			continue
 		}
+		// ignore 'stable' and 'latest'
+		if channel[0:1] != "v" {
+			continue
+		}
 
 		fmt.Printf("%s: ", channel)
 
-		switch channel {
-		case "latest", "stable":
-			channelInfo, err := k3sManager.Releases.GetChannel(channel)
-			if err != nil {
-				fmt.Println("invalid channel name")
-			}
-			fmt.Println(channelInfo.Latest)
-		default:
-			releases, err := k3sManager.Releases.GetReleases(channel)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			for _, release := range releases {
-				fmt.Printf(" %s", release)
-			}
-			fmt.Printf("\n")
-
+		releases, err := k3sManager.Releases.GetReleases(channel)
+		if err != nil {
+			fmt.Println(err)
+			continue
 		}
+
+		for _, release := range releases {
+
+			releaseInfo.Parse(release)
+			fmt.Printf(" %s", releaseInfo.Name)
+		}
+		fmt.Printf("\n")
 
 	}
 
