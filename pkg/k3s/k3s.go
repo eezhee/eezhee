@@ -1,11 +1,9 @@
 package k3s
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -17,26 +15,22 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// notes:
-//   looks like the github graphql api needs an auth token, no matter which data you query
-//   the REST API allows some the tags endpoint to be queried without an auth token
+const (
+	k3sUpdateAPI        = "https://update.k3s.io"
+	k3sChannelsEndpoint = "/v1-release/channels"
+	apiTimeout          = 10 * time.Second
+)
 
 // use cases:
 //  	build latest version of k3s
 //		build specific version of k3s
 // 		check if there is a newer version of a stream (ie 1.18)
 
-// Version of k3s
-type Version struct {
-	Track   string // ie. 1.19
-	Major   string
-	Minor   string
-	Release string
-}
-
 // Manager will handle installation of k3s
 type Manager struct {
-	Releases map[string][]string // list of available k3s versions, groups by track (ie 1.19)
+	Releases      map[string][]string // list of available k3s versions, groups by track (ie 1.19)
+	StableChannel string
+	LatestChannel string
 }
 
 // NewManager will create a new k3s manager
@@ -44,22 +38,6 @@ func NewManager() *Manager {
 	m := new(Manager)
 
 	return m
-}
-
-// parseVersion will take a given version string into parse into its components
-// currently support version in the following format: v1.19.2
-func parseVersion(versionStr string) (version Version, err error) {
-
-	// v1.19.2
-	versionParts := strings.Split(versionStr, ".")
-
-	version.Major = versionParts[0]
-	version.Major = version.Major[1:len(version.Major)]
-	version.Minor = versionParts[1]
-	version.Release = versionParts[2]
-	version.Track = version.Major + "." + version.Minor
-
-	return version, err
 }
 
 // GetVersions of K3S that are available
@@ -85,13 +63,14 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 		// releaseName := release.Name  		// older releases have this blank
 
 		// parse release name
+		var version Release
 		fields := strings.Split(tagName, "+")
 		// releaseParts[1] should always be 'k3s1'
 		releaseParts := strings.Split(fields[0], "-")
 		if len(releaseParts) == 1 {
 			// only want final releases
 			fullVersion := releaseParts[0]
-			version, err := parseVersion(fullVersion)
+			err := version.Parse(fullVersion)
 			if err != nil {
 				// skip this version
 				fmt.Printf("could not parse version %s\n", fullVersion)
@@ -100,8 +79,8 @@ func (m *Manager) GetVersions() (map[string][]string, error) {
 			// sort into streams   1.16, 1.17, etc
 			// ignore version before 1.16
 			// note versions in each track will be in desending order (ie 1.19.2, 1.19.1)
-			if strings.Compare(version.Track, "1.16") >= 0 {
-				m.Releases[version.Track] = append(m.Releases[version.Track], fullVersion)
+			if strings.Compare(version.Channel, "1.16") >= 0 {
+				m.Releases[version.Channel] = append(m.Releases[version.Channel], fullVersion)
 			}
 
 			// } else {
@@ -133,61 +112,6 @@ func (m *Manager) GetChannels() (channels []string, err error) {
 	sort.Sort(sort.Reverse(sort.StringSlice(channels)))
 
 	return channels, nil
-}
-
-// ChannelList is a list of k3s release channels
-type ChannelList struct {
-	Type         string        `json:"type"`
-	ResourceType string        `json:"resourceType"`
-	Data         []ChannelInfo `json:"data"`
-}
-
-// ChannelInfo has info about a specific k3s release channel
-type ChannelInfo struct {
-	ID     string `json:"id"`
-	Type   string `json:"type"`
-	Name   string `json:"name"`
-	Latest string `json:"latest"`
-}
-
-// GetChannels2 is to get latest & stable versions
-func (m *Manager) GetChannels2() error {
-
-	// setup api request
-	apiURL := "https://update.k3s.io/v1-release/channels"
-	request, err := http.NewRequest("GET", apiURL, nil)
-	// request.Header.Add("User-agent", "eezhee")
-	request.Header.Add("Accept", "application/json")
-
-	// make the api request
-	client := &http.Client{Timeout: time.Second * 10}
-	response, err := client.Do(request)
-	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
-		return err
-	}
-	defer response.Body.Close()
-
-	// get channel data
-	data, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	// parse the data
-	var channelList ChannelList
-
-	err = json.Unmarshal([]byte(data), &channelList)
-	if err != nil {
-		return err
-	}
-
-	// numChannels := len(channelList.Data)
-	for _, channel := range channelList.Data {
-		fmt.Println(channel.Name, channel.Latest)
-	}
-
-	return nil
 }
 
 // GetLatestVersion of k3s that is available for a given channel

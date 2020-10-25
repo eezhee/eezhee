@@ -36,8 +36,17 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
-	k3sManager := k3s.NewManager()
-	err := k3sManager.GetChannels2()
+	var releases k3s.ReleaseInfo
+
+	err := releases.GetChannels()
+	if err != nil {
+		return err
+	}
+	latest, err := releases.GetChannel("latest")
+	fmt.Println("latest: ", latest.Latest)
+	stable, err := releases.GetChannel("stable")
+	fmt.Println("stable: ", stable.Latest)
+	err = releases.GetReleases()
 	if err != nil {
 		return err
 	}
@@ -153,7 +162,7 @@ func buildCluster() error {
 	fmt.Println("VM is ready")
 
 	// install k3s on the VM
-	k3sManager = k3s.NewManager()
+	k3sManager := k3s.NewManager()
 	k3sChannels, err := k3sManager.GetChannels()
 	if err != nil {
 		return err
