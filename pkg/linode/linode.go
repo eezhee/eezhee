@@ -10,12 +10,13 @@ import (
 
 	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/linode/linodego"
+	"github.com/sethvargo/go-password/password"
 	"golang.org/x/oauth2"
 )
 
-func strCopy(i string) *string {
-	return &i
-}
+// func strCopy(i string) *string {
+// 	return &i
+// }
 
 // Manager handles interactions with DigitalOcean API
 type Manager struct {
@@ -74,6 +75,9 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 	if testImages {
 		// get list of VM types (~27 variations)
 		images, err := m.api.ListImages(context.Background(), nil)
+		if err != nil {
+			return vmInfo, nil
+		}
 		for _, image := range images {
 			fmt.Println("image:", image.Label, " ", image.ID, " ", image.Description)
 		}
@@ -90,6 +94,9 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 	if testTypes {
 		// get list of VM types (~27 variations)
 		vmTypes, err := m.api.ListTypes(context.Background(), nil)
+		if err != nil {
+			return vmInfo, err
+		}
 		for _, vmInfo := range vmTypes {
 			fmt.Println("type:", vmInfo.ID, " ", vmInfo.Label)
 		}
@@ -201,6 +208,9 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 		filter, _ := json.Marshal(map[string]interface{}{"name": "www"})
 		listOpts := linodego.NewListOptions(0, string(filter))
 		records, err := m.api.ListDomainRecords(context.Background(), domainDetails.ID, listOpts)
+		if err != nil {
+			return vmInfo, err
+		}
 		for _, record := range records {
 			// type = A and name = www
 			if record.Type == "A" && (strings.Compare("www", record.Name)) == 0 {
@@ -258,6 +268,9 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 		// find the image we want to use
 		// keyExists := false
 		keys, err := m.api.ListSSHKeys(context.Background(), nil)
+		if err != nil {
+			return vmInfo, err
+		}
 		for _, key := range keys {
 
 			// get SSHKey, get fingerprint of key and see if matches id_rsa.pub otherwise create it
@@ -280,8 +293,19 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 	testInstances := true
 	if testInstances {
 		instances, err := m.api.ListInstances(context.Background(), nil)
+		if err != nil {
+			return vmInfo, err
+		}
 		for _, instance := range instances {
 			fmt.Println(instance.ID, " ", instance.Label, " ", instance.IPv4)
+		}
+
+		// generate a strong root password.  we will through this away
+		// TODO: should really disable password login for root
+		// TODO: should check if it is actually enabled
+		rootPassword, err := password.Generate(64, 10, 10, false, false)
+		if err != nil {
+			return vmInfo, err
 		}
 
 		createOptions := linodego.InstanceCreateOptions{
@@ -289,7 +313,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 			Type:     "g6-nanode-1",
 			Label:    "test-001",
 			Image:    "linode/ubuntu20.04",
-			RootPass: "why-is-this-needed-2jkaf832",
+			RootPass: rootPassword,
 		}
 		// createOptions.AuthorizedUsers = append(createOptions.AuthorizedUsers, "anuaimi")
 		createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAocQ68fyqU/QZJYrpGrM+tkJDfUPefFPa2Qc+C2BHom3gysv8vqwmFgdVs6Z75rPkUNitpIxUYGPovJbG5pFE6qRNxK3ZHxbk1TSlFBcL8w7jd/jt4IuHwslO4R+hxLG0vzGVFpKSKjAM6yac+q8wOtFU7pKpmrGx9oyClrVQb4mSbCdDazf7/uzXpKMg5mgONbjT6AWSpos2cUDH+VNAQKEnFxKWYjEddCqJnN2kIvtvJUeVhaxYjSVgtiJ7/e0KboDBKRRtO+b4v2TmWmGoRhrPqMo3GazU9aSOAEOMrl3SrxkjmH+eRCUA+1zdvwes8ncVK36FNXzFJ7CxGEAHrw== athir@nuaimi.com")

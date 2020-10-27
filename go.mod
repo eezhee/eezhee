@@ -9,6 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.3.0 // indirect
 	github.com/linode/linodego v0.22.1
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/sethvargo/go-password v0.2.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
