@@ -9,10 +9,38 @@ import (
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/core"
+	"github.com/go-ping/ping"
 	"github.com/linode/linodego"
 	"github.com/sethvargo/go-password/password"
 	"golang.org/x/oauth2"
 )
+
+const maxPingTime = 750
+
+type regionPingTimes struct {
+	name      string
+	ipAddress string
+}
+
+func getPingTime(ipAddress string) (pingTime int64, err error) {
+
+	pinger, err := ping.NewPinger(ipAddress)
+	// pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+	pinger.Count = 3
+	err = pinger.Run() // blocks until finished
+	if err != nil {
+		return 0, err
+	}
+	stats := pinger.Statistics() // get send/receive/rtt stats
+
+	pingTime = stats.AvgRtt.Milliseconds()
+
+	return pingTime, nil
+}
 
 // func strCopy(i string) *string {
 // 	return &i
@@ -50,17 +78,190 @@ func NewManager(providerAPIToken string) (m *Manager) {
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
 func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 
-	// ctx := context.TODO()
+	// don't need to do anything as ssh key is added during instance creation
+
 	return true, nil
 }
 
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-	return "", nil
+
+	regionIPs := []regionPingTimes{
+		{"ca-central", "speedtest.toronto1.linode.com"},
+		{"us-central", "speedtest.dallas.linode.com"},
+		{"us-west", "speedtest.fremont.linode.com"},
+		{"us-east", "speedtest.newark.linode.com"},
+		{"eu-central", "speedtest.frankfurt.linode.com"},
+		{"eu-west", "speedtest.london.linode.com"},
+		{"ap-south", "speedtest.singapore.linode.com"},
+		{"ap-southeast", "speedtest.syd1.linode.com"},
+		{"ap-west", "speedtest.mumbai1.linode.com"},
+		{"ap-northeast", "speedtest.tokyo2.linode.com"},
+	}
+
+	// default to NYC
+	closestRegion = "us-east"
+	// get ping time to each region
+	// to see which is the closest
+	var lowestPingTime = maxPingTime
+	for _, region := range regionIPs {
+		pingTime, err := getPingTime(region.ipAddress)
+		if err != nil {
+			return "", err
+		}
+		// fmt.Println(region.name, ": ", pingTime, "mSec")
+
+		// is this datacenter closer than others we've seen so far
+		if int(pingTime) < lowestPingTime {
+			closestRegion = region.name
+			lowestPingTime = int(pingTime)
+		}
+	}
+
+	return closestRegion, nil
 }
 
 // GetVMInfo will get details of a VM
 func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+	return vmInfo, nil
+}
+
+// CreateVM will create a new VM
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
+	var vmInfo core.VMInfo
+
+	// generate a strong root password.  we will through this away
+	// TODO: should really disable password login for root
+	// TODO: should check if it is actually enabled
+	rootPassword, err := password.Generate(64, 10, 10, false, false)
+	if err != nil {
+		return vmInfo, err
+	}
+
+	createOptions := linodego.InstanceCreateOptions{
+		Region:   region,
+		Type:     size,
+		Label:    name,
+		Image:    image,
+		RootPass: rootPassword,
+	}
+
+	// TODO - don't want ssh fingerprint.  want public key - should we have an interface for ssh keys?
+	createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAocQ68fyqU/QZJYrpGrM+tkJDfUPefFPa2Qc+C2BHom3gysv8vqwmFgdVs6Z75rPkUNitpIxUYGPovJbG5pFE6qRNxK3ZHxbk1TSlFBcL8w7jd/jt4IuHwslO4R+hxLG0vzGVFpKSKjAM6yac+q8wOtFU7pKpmrGx9oyClrVQb4mSbCdDazf7/uzXpKMg5mgONbjT6AWSpos2cUDH+VNAQKEnFxKWYjEddCqJnN2kIvtvJUeVhaxYjSVgtiJ7/e0KboDBKRRtO+b4v2TmWmGoRhrPqMo3GazU9aSOAEOMrl3SrxkjmH+eRCUA+1zdvwes8ncVK36FNXzFJ7CxGEAHrw== athir@nuaimi.com")
+	createOptions.Tags = append(createOptions.Tags, "eezhee")
+	newInstance, err := m.api.CreateInstance(context.Background(), createOptions)
+	if err != nil {
+		return vmInfo, err
+	}
+
+	// see if vm ready
+	status := newInstance.Status
+	for status != linodego.InstanceRunning {
+		// wait a bit
+		time.Sleep(2 * time.Second)
+
+		instanceInfo, err := m.api.GetInstance(context.Background(), newInstance.ID)
+		if err != nil {
+			return vmInfo, err
+		}
+
+		status = instanceInfo.Status
+
+	}
+
+	// TODO - instanceInfo has the latest info - new Instance is stale
+	vmInfo, _ = convertVMInfoToGenericFormat(*newInstance)
+
+	return vmInfo, nil
+}
+
+// ListVMs will return a list of all VMs created by eezhee
+func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
+
+	instances, err := m.api.ListInstances(context.Background(), nil)
+	if err != nil {
+		return vmInfo, err
+	}
+
+	for _, instance := range instances {
+		if len(instance.Tags) > 0 {
+			for _, tag := range instance.Tags {
+				if strings.Compare(tag, "eezhee") == 0 {
+					// we created this VM
+					info, _ := convertVMInfoToGenericFormat(instance)
+					vmInfo = append(vmInfo, info)
+				}
+			}
+		}
+
+		fmt.Println(instance.ID, " ", instance.Label, " ", instance.IPv4)
+		// check tag.  did we create it
+		// if so, convert to generic format
+		// add to results
+	}
+
+	return vmInfo, nil
+}
+
+// convert digitalocean droplet info into our generic format
+func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, error) {
+
+	var vmInfo core.VMInfo
+
+	vmInfo.ID = instance.ID
+	vmInfo.Name = instance.Label
+	vmInfo.Memory = instance.Specs.Memory
+	vmInfo.VCPUs = instance.Specs.VCPUs
+	vmInfo.Disk = instance.Specs.Disk
+	vmInfo.Region = core.RegionInfo{Name: instance.Region}
+	vmInfo.Status = string(instance.Status)
+
+	vmInfo.CreatedAt = instance.Created.String()
+
+	vmInfo.Image = core.ImageInfo{
+		// ID: instance.Image,   	// int vs string
+		Name: instance.Image,
+	}
+
+	vmInfo.Size = core.SizeInfo{
+		Slug: instance.Type,
+	}
+	vmInfo.Networks = core.NetworkInfo{
+		V4Info: []core.V4NetworkInfo{},
+		V6Info: []core.V6NetworkInfo{},
+	}
+
+	v4NetworkInfo := core.V4NetworkInfo{
+		IPAddress: instance.IPv4[0].String(),
+	}
+	vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
+
+	v6NetworkInfo := core.V6NetworkInfo{
+		IPAddress: instance.IPv6,
+	}
+	vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
+
+	vmInfo.Tags = instance.Tags
+
+	return vmInfo, nil
+}
+
+// DeleteVM will delete a given VM
+func (m *Manager) DeleteVM(ID int) error {
+
+	err := m.api.DeleteInstance(context.Background(), ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//
+// used to develop and test code
+//
+// sample has code on how to call various linode apis
+func (m *Manager) sample() (vmInfo core.VMInfo, err error) {
 
 	testProfile := false
 	if testProfile {
@@ -315,7 +516,6 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 			Image:    "linode/ubuntu20.04",
 			RootPass: rootPassword,
 		}
-		// createOptions.AuthorizedUsers = append(createOptions.AuthorizedUsers, "anuaimi")
 		createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAocQ68fyqU/QZJYrpGrM+tkJDfUPefFPa2Qc+C2BHom3gysv8vqwmFgdVs6Z75rPkUNitpIxUYGPovJbG5pFE6qRNxK3ZHxbk1TSlFBcL8w7jd/jt4IuHwslO4R+hxLG0vzGVFpKSKjAM6yac+q8wOtFU7pKpmrGx9oyClrVQb4mSbCdDazf7/uzXpKMg5mgONbjT6AWSpos2cUDH+VNAQKEnFxKWYjEddCqJnN2kIvtvJUeVhaxYjSVgtiJ7/e0KboDBKRRtO+b4v2TmWmGoRhrPqMo3GazU9aSOAEOMrl3SrxkjmH+eRCUA+1zdvwes8ncVK36FNXzFJ7CxGEAHrw== athir@nuaimi.com")
 		createOptions.Tags = append(createOptions.Tags, "eezhee")
 		newInstance, err := m.api.CreateInstance(context.Background(), createOptions)
@@ -350,12 +550,6 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 		}
 
 	}
-
-	// create an instance
-
-	// ssh keys
-
-	// locations
 
 	return vmInfo, nil
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/config"
+	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
 	"github.com/eezhee/eezhee/pkg/linode"
@@ -63,15 +64,6 @@ func buildCluster() error {
 		}
 	}
 
-	VMManager := linode.NewManager(appConfig.LinodeAPIKey)
-	if VMManager == nil {
-		return errors.New("could not create linode client")
-	}
-	_, err = VMManager.GetVMInfo(1)
-	if err != nil {
-		return err
-	}
-
 	// set name for cluster - default to project & branch name
 	if len(deployConfig.Name) == 0 {
 		deployConfig.Name, _ = buildClusterName()
@@ -90,7 +82,8 @@ func buildCluster() error {
 	}
 	switch deployConfig.Cloud {
 	case "digitalocean":
-	// case "aws":
+	case "linode":
+		// case "aws":
 	// case "gcloud":
 	// case "azure":
 	default:
@@ -114,11 +107,23 @@ func buildCluster() error {
 	}
 	deployConfig.K3sVersion = release
 
-	// make sure we can talk to DigitalOcean
-	DOManager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
+	// ok validation completed, time to get building
+	var vmManager core.VMManager
 
-	// make sure this ssh key is loaded into DigitalOcean
-	uploaded, err := DOManager.IsSSHKeyUploaded(sshFingerprint)
+	switch deployConfig.Cloud {
+	case "digitalocean":
+		// make sure we can talk to DigitalOcean
+		vmManager = digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
+
+	case "linode":
+		vmManager = linode.NewManager(appConfig.LinodeAPIKey)
+		if vmManager == nil {
+			return errors.New("could not create linode client")
+		}
+	}
+
+	// make sure this ssh key is loaded into cloud platform
+	uploaded, err := vmManager.IsSSHKeyUploaded(sshFingerprint)
 	if !uploaded {
 		return err
 	}
@@ -126,21 +131,30 @@ func buildCluster() error {
 	// set rest of details for new VM
 	if len(deployConfig.Region) == 0 {
 		fmt.Println("selecting closest region")
-		deployConfig.Region, err = DOManager.SelectClosestRegion()
+		deployConfig.Region, err = vmManager.SelectClosestRegion()
 		if err != nil {
 			return err
 		}
 		fmt.Println(deployConfig.Region, "is closest")
 	}
 
-	if len(deployConfig.Size) == 0 {
-		deployConfig.Size = "s-1vcpu-1gb"
+	var imageName string
+	switch deployConfig.Cloud {
+	case "digitalocean":
+		if len(deployConfig.Size) == 0 {
+			deployConfig.Size = "s-1vcpu-1gb"
+		}
+		imageName = "ubuntu-20-04-x64"
+	case "linode":
+		if len(deployConfig.Size) == 0 {
+			deployConfig.Size = "g6-nanode-1"
+		}
+		imageName = "linode/ubuntu20.04"
 	}
-	imageName := "ubuntu-20-04-x64"
 
 	// time to create the VM
 	fmt.Println("creating a VM")
-	vmInfo, err := DOManager.CreateVM(
+	vmInfo, err := vmManager.CreateVM(
 		deployConfig.Name, imageName, deployConfig.Size,
 		deployConfig.Region, deployConfig.SSHFingerprint,
 	)
@@ -150,12 +164,13 @@ func buildCluster() error {
 	vmID := vmInfo.ID
 	status := vmInfo.Status
 
+	// TODO - this is not true for linode
 	// see if vm ready.  if not need to wait as don't have IP yet
 	for strings.Compare(status, "active") != 0 {
 
 		// wait a bit
 		time.Sleep(2 * time.Second)
-		vmInfo, err = DOManager.GetVMInfo(vmID)
+		vmInfo, err = vmManager.GetVMInfo(vmID)
 		if err != nil {
 			// TODO: vm has been created, really should delete (or should we add retry to getVMInfo?)
 			return err
