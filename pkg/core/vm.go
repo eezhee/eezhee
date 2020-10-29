@@ -5,16 +5,15 @@ import (
 	"strings"
 )
 
-// VMProvider is the interface all cloud provider need to follow
-type VMProvider interface {
-	Int() bool
-	ListVMs()
-	CreateVM()
-	GetVMInfo()
-	DeleteVM()
-	UploadSSHKey()
+// VMManager is the interface all cloud provider need to follow
+type VMManager interface {
+	ListVMs() (vmInfo []VMInfo, err error)
+	CreateVM(name string, image string, size string, region string, sshFingerprint string) (VMInfo, error)
+	GetVMInfo(vmID int) (vmInfo VMInfo, err error)
+	DeleteVM(ID int) error
+	// UploadSSHKey()
 	IsSSHKeyUploaded(fingerprint string) (bool, error)
-	SelectClosestRegion()
+	SelectClosestRegion() (closestRegion string, err error)
 }
 
 // Regions has details about all the regions a provider supports
