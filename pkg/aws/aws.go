@@ -44,17 +44,17 @@ func NewManager(providerAPIToken string) (m *Manager) {
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
 func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 
-	// TODO: can you upload a keypair? seems like it just generates a new one
+	// TODO: API calls are region specific. so if import key, only for that region of AWS
 
 	svc := ec2.New(m.api)
-	keyPairInfo, err := svc.DescribeKeyPairs(nil)
+	dkpOutput, err := svc.DescribeKeyPairs(nil)
 	if err != nil {
 		// errrors.New("Unable to get key pairs, %v", err)
 		return false, err
 	}
 	// func (c *EC2) CreateKeyPair(input *CreateKeyPairInput) (*CreateKeyPairOutput, error)
 	foundKeyPair := false
-	for _, keyPair := range keyPairInfo.KeyPairs {
+	for _, keyPair := range dkpOutput.KeyPairs {
 		fmt.Println(keyPair)
 	}
 
@@ -63,6 +63,14 @@ func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 	}
 
 	// need to create a new keypair
+	var keyPairInfo ec2.ImportKeyPairInput
+	keyPairInfo.SetKeyName("athir")
+	keyPairInfo.SetPublicKeyMaterial([]byte("dakjfdalkjfadslkj"))
+	//keyPairInfo.SetDryRun()
+	keyPairInfo.Validate()
+
+	keyPair, err := svc.ImportKeyPair(&keyPairInfo)
+	fmt.Println(keyPair.KeyFingerprint)
 
 	return true, nil
 }
@@ -113,21 +121,48 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 // GetVMInfo will get details of a VM
 func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+
 	return vmInfo, nil
 }
 
 // CreateVM will create a new VM
 func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
 	var vmInfo core.VMInfo
+
+	svc := ec2.New(m.api)
+
+	// us-east-1
+	// ubuntu 20.04LTS: ami-0dba2cb6798deb6d8 (amd64) ami-0ea142bd244023692 (arm)
+	// t1.micro, t2.micro
+	// VPC - create new one?
+	// security group
+	// shutdown behavior
+
+	// Specify the details of the instance that you want to create.
+	runResult, err := svc.RunInstances(&ec2.RunInstancesInput{
+		// An Amazon Linux AMI ID for t2.micro instances in the us-west-2 region
+		ImageId:      aws.String("ami-e7527ed7"),
+		InstanceType: aws.String("t2.micro"),
+		MinCount:     aws.Int64(1),
+		MaxCount:     aws.Int64(1),
+	})
+	fmt.Println(runResult)
+	if err != nil {
+		fmt.Println("Could not create instance", err)
+		return vmInfo, err
+	}
+
 	return vmInfo, nil
 }
 
 // ListVMs will return a list of all VMs created by eezhee
 func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
+
 	return vmInfo, nil
 }
 
 // DeleteVM will delete a given VM
 func (m *Manager) DeleteVM(ID int) error {
+
 	return nil
 }

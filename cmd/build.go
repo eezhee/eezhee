@@ -14,6 +14,7 @@ import (
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
 	"github.com/eezhee/eezhee/pkg/linode"
+	"github.com/eezhee/eezhee/pkg/vultr"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -65,7 +66,8 @@ func buildCluster() error {
 		}
 	}
 
-	newVMManager := aws.NewManager(appConfig.DigitalOceanAPIKey)
+	// newVMManager := aws.NewManager(appConfig.DigitalOceanAPIKey)
+	newVMManager := vultr.NewManager(appConfig.VultrAPIKey)
 	if newVMManager == nil {
 		fmt.Println("opps")
 	}
@@ -98,6 +100,7 @@ func buildCluster() error {
 	case "digitalocean":
 	case "linode":
 	case "aws":
+	case "vultr":
 	// case "gcloud":
 	// case "azure":
 	default:
@@ -127,6 +130,12 @@ func buildCluster() error {
 	var vmManager core.VMManager
 
 	switch deployConfig.Cloud {
+	case "aws":
+		// TODO: work out how to authenticate for aws
+		vmManager = aws.NewManager(appConfig.LinodeAPIKey)
+		if vmManager == nil {
+			return errors.New("could not create aws client")
+		}
 	case "digitalocean":
 		vmManager = digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
 		if vmManager == nil {
@@ -137,11 +146,10 @@ func buildCluster() error {
 		if vmManager == nil {
 			return errors.New("could not create linode client")
 		}
-	case "aws":
-		// TODO: work out how to authenticate for aws
-		vmManager = aws.NewManager(appConfig.LinodeAPIKey)
+	case "vultr":
+		vmManager := vultr.NewManager(appConfig.LinodeAPIKey)
 		if vmManager == nil {
-			return errors.New("could not create aws client")
+			return errors.New("could not create vultr client")
 		}
 	default:
 		// should never get here (but lets play it safe)

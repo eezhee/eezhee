@@ -15,6 +15,7 @@ type AppConfig struct {
 	DigitalOceanAPIKey string
 	CloudFlareAPIKey   string
 	LinodeAPIKey       string
+	VultrAPIKey        string
 }
 
 // NewAppConfig will create a new deploy file object
@@ -71,6 +72,7 @@ func (a *AppConfig) Load() error {
 	a.DigitalOceanAPIKey = a.v.GetString("digitalocean-api-key")
 	a.CloudFlareAPIKey = a.v.GetString("cloudflare-api-key")
 	a.LinodeAPIKey = a.v.GetString("linode-api-key")
+	a.VultrAPIKey = a.v.GetString("vultr-api-key")
 
 	return nil
 }
@@ -85,7 +87,10 @@ func (a *AppConfig) Save() error {
 		a.v.Set("cloudflare-api-key", a.CloudFlareAPIKey)
 	}
 	if len(a.LinodeAPIKey) > 0 {
-		a.v.Set("linode-api-key", a.CloudFlareAPIKey)
+		a.v.Set("linode-api-key", a.LinodeAPIKey)
+	}
+	if len(a.VultrAPIKey) > 0 {
+		a.v.Set("vultr-api-key", a.VultrAPIKey)
 	}
 
 	err := a.v.WriteConfig()
