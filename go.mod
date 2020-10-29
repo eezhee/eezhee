@@ -3,6 +3,7 @@ module github.com/eezhee/eezhee
 go 1.15
 
 require (
+	github.com/aws/aws-sdk-go v1.35.17
 	github.com/cloudflare/cloudflare-go v0.13.4
 	github.com/digitalocean/godo v1.49.0
 	github.com/go-ping/ping v0.0.0-20201008161548-5f9dc3248bce

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eezhee/eezhee/pkg/aws"
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
@@ -64,6 +65,13 @@ func buildCluster() error {
 		}
 	}
 
+	newVMManager := aws.NewManager(appConfig.DigitalOceanAPIKey)
+	if newVMManager == nil {
+		fmt.Println("opps")
+	}
+	newVMManager.IsSSHKeyUploaded("a1:42:15")
+	newVMManager.SelectClosestRegion()
+
 	// make sure we have a name for the cluster
 	// if not set, create a name
 	if len(deployConfig.Name) == 0 {
@@ -89,7 +97,7 @@ func buildCluster() error {
 	switch deployConfig.Cloud {
 	case "digitalocean":
 	case "linode":
-		// case "aws":
+	case "aws":
 	// case "gcloud":
 	// case "azure":
 	default:
@@ -128,6 +136,12 @@ func buildCluster() error {
 		vmManager = linode.NewManager(appConfig.LinodeAPIKey)
 		if vmManager == nil {
 			return errors.New("could not create linode client")
+		}
+	case "aws":
+		// TODO: work out how to authenticate for aws
+		vmManager = aws.NewManager(appConfig.LinodeAPIKey)
+		if vmManager == nil {
+			return errors.New("could not create aws client")
 		}
 	default:
 		// should never get here (but lets play it safe)
