@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/eezhee/eezhee/pkg/k3s"
 	"github.com/eezhee/eezhee/pkg/linode"
 	"github.com/eezhee/eezhee/pkg/vultr"
+	"golang.org/x/crypto/ssh"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -72,7 +74,11 @@ func buildCluster() error {
 		fmt.Println("opps")
 	}
 	newVMManager.IsSSHKeyUploaded("a1:42:15")
-	newVMManager.SelectClosestRegion()
+	closestRegion, err := newVMManager.SelectClosestRegion()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("region:", closestRegion)
 
 	// make sure we have a name for the cluster
 	// if not set, create a name
@@ -80,13 +86,20 @@ func buildCluster() error {
 		deployConfig.Name, _ = buildClusterName()
 	}
 
-	// TODO - need public key as well - create ssh key struct
-	// get ssh key we will use to login to new VM
-	sshFingerprint, err := getSSHFingerprint()
+	// load ssh key we will use
+	var sshKey core.SSHKey
+
+	dir, _ := homedir.Dir()
+	keyFile := dir + "/.ssh/id_rsa.pub"
+
+	err = sshKey.LoadPublicKey(keyFile)
 	if err != nil {
 		return err
 	}
-	deployConfig.SSHFingerprint = sshFingerprint
+
+	// TODO - need public key as well - create ssh key struct
+	// get ssh key we will use to login to new VM
+	deployConfig.SSHFingerprint = sshKey.Fingerprint()
 
 	// does config specify which cloud to use
 	// TODO: if not, use one that we have credentials for
@@ -158,7 +171,7 @@ func buildCluster() error {
 
 	// TODO: for DO, should upload it if not there yet
 	// make sure this ssh key is loaded into cloud platform
-	uploaded, err := vmManager.IsSSHKeyUploaded(sshFingerprint)
+	uploaded, err := vmManager.IsSSHKeyUploaded(deployConfig.SSHFingerprint)
 	if !uploaded {
 		return err
 	}
@@ -342,4 +355,36 @@ func getSSHFingerprint() (string, error) {
 	fingerprint = fingerprint[4:]
 
 	return fingerprint, nil
+}
+
+// LoadSSHPublicKey will load a ssh key
+func LoadSSHPublicKey() {
+
+	dir, _ := homedir.Dir()
+	keyFile := dir + "/.ssh/id_rsa.pub"
+	data, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return
+	}
+	publicKey := string(data)
+	fmt.Println(publicKey)
+
+	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(data))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(pk)
+	original := string(ssh.MarshalAuthorizedKey(pk))
+	fmt.Println(original)
+
+	if strings.Compare(publicKey, original) == 0 {
+		// can't do this as publicKey has email address at end of string
+		fmt.Println("can go back and forth")
+	}
+	fmt.Println(pk.Type())
+
+	fingerprint := ssh.FingerprintLegacyMD5(pk)
+	fmt.Println(fingerprint)
+
+	return
 }

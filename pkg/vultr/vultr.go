@@ -3,10 +3,16 @@ package vultr
 import (
 	"context"
 	"fmt"
+	"math"
+	"strconv"
+	"time"
 
 	"github.com/eezhee/eezhee/pkg/core"
+	"github.com/go-ping/ping"
 	"github.com/vultr/govultr"
 )
+
+const maxPingTime = 2 * time.Second // assumes there will be atleast one region closer than this
 
 // Manager controls access to AWS
 type Manager struct {
@@ -56,44 +62,132 @@ func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 	return true, nil
 }
 
-// SelectClosestRegion will check all DO regions to find the closest
+// TODO make more generic
+//      should be able to pass array of IPs/hostnames and get sorted array back
+//      not just for regions.  can be for hosts (or whatever)
+
+type regionPingTime struct {
+	id      string // region ID
+	name    string // region name/code
+	address string // ip address or hostname (in region) that we can use for ping test
+	time    int    // ping time for given ip address (in msec)
+}
+
+// getPingTime will do a ping test to the given host / ip address
+func getPingTime(region regionPingTime, ch chan regionPingTime) {
+
+	pinger, err := ping.NewPinger(region.address)
+	if err == nil {
+
+		// set ping parameters
+		pinger.Count = 3
+		pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
+
+		// do the ping test
+		err = pinger.Run() // blocks until finished
+		if err == nil {
+			// get results
+			stats := pinger.Statistics() // get send/receive/rtt stats
+
+			// save results
+			pingTime := stats.AvgRtt.Milliseconds()
+			region.time = int(pingTime)
+		}
+	}
+
+	if err != nil {
+		// log the error
+		fmt.Println(err)
+	}
+
+	// pass results back to caller
+	// note: need to pass something back whether worked or not
+	// callers waits until gets all results
+	ch <- region
+
+	return
+}
+
+// SelectClosestRegion will ping all regions and return the ID of the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
-	// miami https://fl-us-ping.vultr.com/
-	// new jersey 1,EWR,New Jersey,NJ,US https://nj-us-ping.vultr.com/
-	// chicago 2,ORD,Chicago,IL,US https://il-us-ping.vultr.com
-	// dallas https://tx-us-ping.vultr.com
-	// seattle 4,SEA,Seattle,WA,US https://wa-us-ping.vultr.com/
-	// los angeles https://lax-ca-us-ping.vultr.com/
-	// atlanta https://ga-us-ping.vultr.com/
-	// silicon valley 12,SJC,Silicon Valley,CA,US https://sjo-ca-us-ping.vultr.com/
-	// toronto 22,YTO,Toronto,,CA https://tor-ca-ping.vultr.com
+	regionIPs := []regionPingTime{
+		{"3", "DFW", "tx-us-ping.vultr.com", 0},
+		{"5", "LAX", "lax-ca-us-ping.vultr.com", 0},
+		{"39", "MIA", "fl-us-ping.vultr.com", 0},
+		{"12", "SJC", "sjo-ca-us-ping.vultr.com", 0},
+		{"2", "ORD", "il-us-ping.vultr.com", 0},
+		{"4", "SEA", "wa-us-ping.vultr.com", 0},
+		{"1", "EWR", "nj-us-ping.vultr.com", 0},
+		{"6", "ATL", "ga-us-ping.vultr.com", 0},
 
-	// amsterdam https://ams-nl-ping.vultr.com/
-	// london https://lon-gb-ping.vultr.com/
-	// frankfurt https://fra-de-ping.vultr.com/
-	// paris https://par-fr-ping.vultr.com/
+		{"22", "TYO", "tor-ca-ping.vultr.com", 0},
 
-	// tokyo 25,NRT,Tokyo,,JP https://hnd-jp-ping.vultr.com/
-	// seoul 34,Seoul,,KRhttps://sel-kor-ping.vultr.com/
-	// singapore 40,SGP, Singapore,,SG https://sgp-ping.vultr.com/
+		{"24", "CDG", "par-fr-ping.vultr.com", 0},
+		{"9", "FRA", "fra-de-ping.vultr.com", 0},
+		{"7", "AMS", "ams-nl-ping.vultr.com", 0},
+		{"8", "LHR", "lon-gb-ping.vultr.com", 0},
 
-	// sydney https://syd-au-ping.vultr.com/
-
-	regions, err := m.api.Region.List(context.Background())
-	if err != nil {
-		return "", err
+		{"40", "SGP", "sgp-ping.vultr.com", 0},
+		{"34", "ICN", "sel-kor-ping.vultr.com", 0},
+		{"25", "NRT", "hnd-jp-ping.vultr.com", 0},
+		{"19", "SYD", "syd-au-ping.vultr.com", 0},
 	}
 
-	for _, region := range regions {
-		fmt.Println(region.Name, region.Country, region.State, region.RegionCode, region.RegionID)
+	numRegions := len(regionIPs)
+
+	// get ping time to each region
+	ch := make(chan regionPingTime, numRegions)
+	for _, region := range regionIPs {
+		go getPingTime(region, ch)
 	}
-	return "", nil
+
+	// reading result until we have them all
+	numResults := 0
+	lowestPingTime := math.MaxInt64
+	for result := range ch {
+
+		numResults++
+
+		// keep track of fastest ping time
+		// ignore time of 0 (means ping failed)
+		if (result.time > 0) && (result.time < lowestPingTime) {
+			closestRegion = result.id
+			lowestPingTime = result.time
+		}
+		// fmt.Println(result.name, result.time)
+
+		// do we have all the results?
+		if numResults == numRegions {
+			close(ch) // will break the loop
+		}
+	}
+
+	return closestRegion, nil
+
+	// regions, err := m.api.Region.List(context.Background())
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// for _, region := range regions {
+	// 	fmt.Println(region.Name, region.Country, region.State, region.RegionCode, region.RegionID, region.)
+	// }
+	// return "", nil
 
 }
 
 // GetVMInfo will get details of a VM
 func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+
+	instanceID := string(vmID)
+	_, err = m.api.Server.GetServer(context.Background(), instanceID)
+	// server, err := m.api.Server.GetServer(context.Background(), instanceID)
+	if err != nil {
+		return vmInfo, err
+	}
+
+	//Convert to vmInfo format
 
 	return vmInfo, nil
 }
@@ -101,6 +195,17 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 // CreateVM will create a new VM
 func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
 	var vmInfo core.VMInfo
+
+	regionID, _ := strconv.Atoi(region)
+	sizeInt, _ := strconv.Atoi(size)
+	imageID, _ := strconv.Atoi(image)
+	options := govultr.ServerOptions{}
+	server, err := m.api.Server.Create(context.Background(), regionID, sizeInt, imageID, &options)
+	if err != nil {
+		return vmInfo, err
+	}
+	fmt.Println(server)
+
 	return vmInfo, nil
 }
 
