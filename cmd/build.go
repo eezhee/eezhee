@@ -68,18 +68,6 @@ func buildCluster() error {
 		}
 	}
 
-	// newVMManager := aws.NewManager(appConfig.DigitalOceanAPIKey)
-	newVMManager := vultr.NewManager(appConfig.VultrAPIKey)
-	if newVMManager == nil {
-		fmt.Println("opps")
-	}
-	newVMManager.IsSSHKeyUploaded("a1:42:15")
-	closestRegion, err := newVMManager.SelectClosestRegion()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("region:", closestRegion)
-
 	// make sure we have a name for the cluster
 	// if not set, create a name
 	if len(deployConfig.Name) == 0 {
@@ -97,18 +85,23 @@ func buildCluster() error {
 		return err
 	}
 
-	// TODO - need public key as well - create ssh key struct
-	// get ssh key we will use to login to new VM
+	// TODO - change to .SSHPublicKey
+	//
 	deployConfig.SSHFingerprint = sshKey.Fingerprint()
 
 	// does config specify which cloud to use
-	// TODO: if not, use one that we have credentials for
+	// if not, use one that we have credentials for
 	if len(deployConfig.Cloud) == 0 {
-		deployConfig.Cloud = "digitalocean"
+		if len(appConfig.DigitalOceanAPIKey) > 0 {
+			deployConfig.Cloud = "digitalocean"
+		} else if len(appConfig.LinodeAPIKey) > 0 {
+			deployConfig.Cloud = "linode"
+		} else if len(appConfig.VultrAPIKey) > 0 {
+			deployConfig.Cloud = "vultr"
+		}
 	}
 
 	// make sure we have a valid cloud
-	// TODO: make sure we have credentials for given cloud
 	switch deployConfig.Cloud {
 	case "digitalocean":
 	case "linode":
@@ -117,7 +110,7 @@ func buildCluster() error {
 	// case "gcloud":
 	// case "azure":
 	default:
-		return errors.New("only can deploy to digitalocean right now")
+		return errors.New("no or invalid cloud specified")
 	}
 	fmt.Println("deplying to", deployConfig.Cloud)
 
@@ -160,7 +153,7 @@ func buildCluster() error {
 			return errors.New("could not create linode client")
 		}
 	case "vultr":
-		vmManager := vultr.NewManager(appConfig.LinodeAPIKey)
+		vmManager = vultr.NewManager(appConfig.VultrAPIKey)
 		if vmManager == nil {
 			return errors.New("could not create vultr client")
 		}
@@ -171,8 +164,8 @@ func buildCluster() error {
 
 	// TODO: for DO, should upload it if not there yet
 	// make sure this ssh key is loaded into cloud platform
-	uploaded, err := vmManager.IsSSHKeyUploaded(deployConfig.SSHFingerprint)
-	if !uploaded {
+	_, err = vmManager.IsSSHKeyUploaded(sshKey)
+	if err != nil {
 		return err
 	}
 
@@ -201,13 +194,18 @@ func buildCluster() error {
 			deployConfig.Size = "g6-nanode-1"
 		}
 		imageName = "linode/ubuntu20.04"
+	case "vultr":
+		if len(deployConfig.Size) == 0 {
+			deployConfig.Size = "201" // $5/month
+		}
+		imageName = "387" // ubuntu 20.04
 	}
 
 	// time to create the VM
 	fmt.Println("creating a VM")
 	vmInfo, err := vmManager.CreateVM(
 		deployConfig.Name, imageName, deployConfig.Size,
-		deployConfig.Region, deployConfig.SSHFingerprint,
+		deployConfig.Region, sshKey,
 	)
 	if err != nil {
 		return err
@@ -215,7 +213,9 @@ func buildCluster() error {
 	vmID := vmInfo.ID
 	status := vmInfo.Status
 
+	// need to add ssh key to VM Create() - server options
 	// TODO - this is not true for linode
+	// need generic way to seeing if VM ready   IsVMReady() which calls GetVMInfo()
 	// TOOD - should DO.CreateVM not return until VM 'active' and there is an IP?
 
 	// see if vm ready.  if not need to wait as don't have IP yet

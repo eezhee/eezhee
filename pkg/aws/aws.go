@@ -42,7 +42,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
-func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
+func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err error) {
 
 	// TODO: API calls are region specific. so if import key, only for that region of AWS
 
@@ -50,16 +50,17 @@ func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 	dkpOutput, err := svc.DescribeKeyPairs(nil)
 	if err != nil {
 		// errrors.New("Unable to get key pairs, %v", err)
-		return false, err
+		return "", err
 	}
 	// func (c *EC2) CreateKeyPair(input *CreateKeyPairInput) (*CreateKeyPairOutput, error)
 	foundKeyPair := false
 	for _, keyPair := range dkpOutput.KeyPairs {
 		fmt.Println(keyPair)
+		keyID = *keyPair.KeyPairId
 	}
 
 	if foundKeyPair {
-		return true, nil
+		return keyID, nil
 	}
 
 	// need to create a new keypair
@@ -70,9 +71,10 @@ func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
 	keyPairInfo.Validate()
 
 	keyPair, err := svc.ImportKeyPair(&keyPairInfo)
+	keyID = *keyPair.KeyPairId
 	fmt.Println(keyPair.KeyFingerprint)
 
-	return true, nil
+	return keyID, nil
 }
 
 type regionPingTimes struct {
@@ -126,7 +128,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 }
 
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshKey core.SSHKey) (core.VMInfo, error) {
 	var vmInfo core.VMInfo
 
 	svc := ec2.New(m.api)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/digitalocean/godo"
@@ -47,24 +48,25 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
-func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
+func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 	ctx := context.TODO()
 
 	// get list of sshkeys DO knows about
 	sshKeys, _, err := m.api.Keys.List(ctx, nil)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	// go through each key and see if it matches what is on this machine
 	for _, sshKey := range sshKeys {
-		if strings.Compare(fingerprint, sshKey.Fingerprint) == 0 {
-			return true, nil
+		if strings.Compare(desiredSSHKey.Fingerprint(), sshKey.Fingerprint) == 0 {
+			keyID := strconv.Itoa(sshKey.ID)
+			return keyID, nil
 		}
 	}
 
-	return false, errors.New("ssh key not available on digitalocean")
+	return "", errors.New("ssh key not available on digitalocean")
 }
 
 type regionPingTimes struct {
@@ -128,7 +130,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 }
 
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshKey core.SSHKey) (core.VMInfo, error) {
 
 	var vmInfo core.VMInfo
 
@@ -139,7 +141,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		Image: godo.DropletCreateImage{
 			Slug: image,
 		},
-		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: sshFingerprint}},
+		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: sshKey.Fingerprint()}},
 		// Volumes: []godo.DropletCreateVolume{
 		// 	{Name: "hello-im-a-volume"},
 		// 	{ID: "hello-im-another-volume"},

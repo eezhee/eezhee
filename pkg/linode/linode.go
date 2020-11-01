@@ -50,11 +50,11 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
-func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
+func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 	// don't need to do anything as ssh key is added during instance creation
 
-	return true, nil
+	return "1", nil
 }
 
 // SelectClosestRegion will check all DO regions to find the closest
@@ -102,7 +102,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 }
 
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshKey core.SSHKey) (core.VMInfo, error) {
 	var vmInfo core.VMInfo
 
 	// generate a strong root password.  we will through this away
@@ -121,8 +121,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		RootPass: rootPassword,
 	}
 
-	// TODO - don't want ssh fingerprint.  want public key - should we have an interface for ssh keys?
-	createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAocQ68fyqU/QZJYrpGrM+tkJDfUPefFPa2Qc+C2BHom3gysv8vqwmFgdVs6Z75rPkUNitpIxUYGPovJbG5pFE6qRNxK3ZHxbk1TSlFBcL8w7jd/jt4IuHwslO4R+hxLG0vzGVFpKSKjAM6yac+q8wOtFU7pKpmrGx9oyClrVQb4mSbCdDazf7/uzXpKMg5mgONbjT6AWSpos2cUDH+VNAQKEnFxKWYjEddCqJnN2kIvtvJUeVhaxYjSVgtiJ7/e0KboDBKRRtO+b4v2TmWmGoRhrPqMo3GazU9aSOAEOMrl3SrxkjmH+eRCUA+1zdvwes8ncVK36FNXzFJ7CxGEAHrw== athir@nuaimi.com")
+	createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, sshKey.GetPublicKey())
 	createOptions.Tags = append(createOptions.Tags, "eezhee")
 	newInstance, err := m.api.CreateInstance(context.Background(), createOptions)
 	if err != nil {
