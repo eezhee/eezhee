@@ -115,3 +115,19 @@ func (a *AppConfig) Delete() error {
 
 	return nil
 }
+
+// GetDefaultCloud returns which cloud has been configured
+// if there are multiple, will default to DigitalOcean
+func (a *AppConfig) GetDefaultCloud() string {
+
+	if len(a.DigitalOceanAPIKey) > 0 {
+		return "digitalocean"
+	} else if len(a.LinodeAPIKey) > 0 {
+		return "linode"
+	} else if len(a.VultrAPIKey) > 0 {
+		return "vultr"
+	}
+
+	// don't have any API keys so can't have a default
+	return ""
+}

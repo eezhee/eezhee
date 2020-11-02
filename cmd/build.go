@@ -49,6 +49,13 @@ func buildCluster() error {
 		return err
 	}
 
+	// see which cloud we have an api token for
+	defaultCloud := appConfig.GetDefaultCloud()
+	if len(defaultCloud) == 0 {
+		// opps, no api keys specified so can't proceed until resolved
+		return errors.New("no cloud provider configured. User 'eezhee auth add'")
+	}
+
 	// make sure the cluster doesn't already exist
 	// is there a deploy state file
 	deployState := config.NewDeployState()
@@ -84,31 +91,20 @@ func buildCluster() error {
 	if err != nil {
 		return err
 	}
-
-	// TODO - change to .SSHPublicKey
-	//
-	deployConfig.SSHFingerprint = sshKey.Fingerprint()
+	deployConfig.SSHPublicKey = sshKey.GetPublicKey()
 
 	// does config specify which cloud to use
 	// if not, use one that we have credentials for
 	if len(deployConfig.Cloud) == 0 {
-		if len(appConfig.DigitalOceanAPIKey) > 0 {
-			deployConfig.Cloud = "digitalocean"
-		} else if len(appConfig.LinodeAPIKey) > 0 {
-			deployConfig.Cloud = "linode"
-		} else if len(appConfig.VultrAPIKey) > 0 {
-			deployConfig.Cloud = "vultr"
-		}
+		deployConfig.Cloud = defaultCloud
 	}
 
 	// make sure we have a valid cloud
 	switch deployConfig.Cloud {
-	case "digitalocean":
-	case "linode":
-	case "aws":
-	case "vultr":
+	case "digitalocean", "linode", "vultr":
 	// case "gcloud":
 	// case "azure":
+	// case "aws":
 	default:
 		return errors.New("no or invalid cloud specified")
 	}
@@ -213,13 +209,14 @@ func buildCluster() error {
 	vmID := vmInfo.ID
 	status := vmInfo.Status
 
-	// need to add ssh key to VM Create() - server options
-	// TODO - this is not true for linode
-	// need generic way to seeing if VM ready   IsVMReady() which calls GetVMInfo()
-	// TOOD - should DO.CreateVM not return until VM 'active' and there is an IP?
-
 	// see if vm ready.  if not need to wait as don't have IP yet
-	for strings.Compare(status, "active") != 0 {
+
+	// all providers have their own status messages
+	// the only one we standardize is the final one
+	// provider needs to convert to "running"
+
+	lastStatus := ""
+	for strings.Compare(status, "running") != 0 {
 
 		// wait a bit
 		time.Sleep(2 * time.Second)
@@ -229,7 +226,16 @@ func buildCluster() error {
 			return err
 		}
 		status = vmInfo.Status
+
+		// print status if it has changed since last time
+		if strings.Compare(lastStatus, status) != 0 {
+			fmt.Println(status)
+			lastStatus = status
+		}
 	}
+
+	// some VMs have multiple IPs (internal and public)
+	// we just need the public one
 	vmPublicIP, err := vmInfo.GetPublicIP()
 	if err != nil {
 		return err
@@ -248,7 +254,7 @@ func buildCluster() error {
 	deployState.Size = vmInfo.Size.Slug
 	deployState.IP = vmPublicIP
 	// TODO save public key
-	deployState.SSHFingerprint = deployConfig.SSHFingerprint
+	deployState.SSHPublicKey = deployConfig.SSHPublicKey
 	err = deployState.Save()
 	if err != nil {
 		return err

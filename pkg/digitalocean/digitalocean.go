@@ -218,7 +218,12 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error)
 		Slug:     dropletInfo.Region.Slug,
 		Features: dropletInfo.Region.Features,
 	}
-	vmInfo.Status = dropletInfo.Status
+	// need to convert final status to standard format
+	if dropletInfo.Status == "active" {
+		vmInfo.Status = "running"
+	} else {
+		vmInfo.Status = dropletInfo.Status
+	}
 	// vmInfo.SizeSlug = dropletInfo.SizeSlug
 	vmInfo.CreatedAt = dropletInfo.Created
 	vmInfo.Image = core.ImageInfo{

@@ -10,13 +10,13 @@ import (
 // DeployConfig has details of how to deploy the cluster
 // note: all these fields are optional
 type DeployConfig struct {
-	v              *viper.Viper // viper object
-	Cloud          string       // which cloud cluster was create in
-	Name           string       // what to call the cluster
-	Region         string       // where to deploy the cluster
-	Size           string       // VM size
-	SSHFingerprint string       // which ssh key to allow to acces the VM(s)
-	K3sVersion     string       // version of k3s to use. ie: latest, stable, 1.18, 1.18.3
+	v            *viper.Viper // viper object
+	Cloud        string       // which cloud cluster was create in
+	Name         string       // what to call the cluster
+	Region       string       // where to deploy the cluster
+	Size         string       // VM size
+	SSHPublicKey string       // which ssh key to allow to acces the VM(s)
+	K3sVersion   string       // version of k3s to use. ie: latest, stable, 1.18, 1.18.3
 }
 
 // NewDeployConfig will create a new deploy file object
@@ -63,7 +63,7 @@ func (d *DeployConfig) Load() error {
 	d.Region = d.v.GetString("region")
 	d.Size = d.v.GetString("size")
 
-	d.SSHFingerprint = d.v.GetString("ssh-fingerprint")
+	d.SSHPublicKey = d.v.GetString("ssh-public-key")
 	d.K3sVersion = d.v.GetString("k3s-version")
 
 	return nil
@@ -76,7 +76,7 @@ func (d *DeployConfig) Save() error {
 	d.v.Set("name", d.Name)
 	d.v.Set("region", d.Region)
 	d.v.Set("size", d.Size)
-	d.v.Set("ssh-fingerprint", d.SSHFingerprint)
+	d.v.Set("ssh-public-key", d.SSHPublicKey)
 	d.v.Set("k3s-version", d.K3sVersion)
 
 	err := d.v.WriteConfig()

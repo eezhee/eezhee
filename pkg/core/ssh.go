@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 
 	"golang.org/x/crypto/ssh"
@@ -40,7 +39,7 @@ func (s *SSHKey) LoadPublicKey(filename string) error {
 func (s *SSHKey) GetPublicKey() string {
 
 	original := string(ssh.MarshalAuthorizedKey(s.PublicKey))
-	fmt.Println(original)
+	// fmt.Println(original)
 
 	return original
 }

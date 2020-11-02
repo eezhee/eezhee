@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/core"
@@ -151,9 +152,9 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 //      not just for regions.  can be for hosts (or whatever)
 
 // getPingTime will do a ping test to the given host / ip address
-func getPingTime(region regionPingTime, ch chan regionPingTime) {
+func getPingTime(pingTest regionPingTime, ch chan regionPingTime) {
 
-	pinger, err := ping.NewPinger(region.address)
+	pinger, err := ping.NewPinger(pingTest.address)
 	if err == nil {
 
 		// set ping parameters
@@ -168,7 +169,7 @@ func getPingTime(region regionPingTime, ch chan regionPingTime) {
 
 			// save results
 			pingTime := stats.AvgRtt.Milliseconds()
-			region.time = int(pingTime)
+			pingTest.time = int(pingTime)
 		}
 	}
 
@@ -180,21 +181,37 @@ func getPingTime(region regionPingTime, ch chan regionPingTime) {
 	// pass results back to caller
 	// note: need to pass something back whether worked or not
 	// callers waits until gets all results
-	ch <- region
+	ch <- pingTest
 
 	return
 }
 
 // SelectClosestRegion will ping all regions and return the ID of the closest
+// TODO move this to pkg/core/vm.go
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
+	// get ping time to each region
 	numRegions := len(regionIPs)
 
-	// get ping time to each region
+	// use go routine to do each ping
+	// will return result using a channel
 	ch := make(chan regionPingTime, numRegions)
+
+	// set a timeout as we don't want to hang if
+	// don't get all ping results
+	f := func() {
+		close(ch)
+	}
+
+	// issue the pings
 	for _, region := range regionIPs {
 		go getPingTime(region, ch)
 	}
+
+	// start the timeout timer
+	// timeout should be longer than timeout on pings
+	timeout := time.AfterFunc(4*time.Second, f)
+	defer timeout.Stop()
 
 	// reading result until we have them all
 	numResults := 0
@@ -212,9 +229,11 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 		// fmt.Println(result.name, result.time)
 
 		// do we have all the results?
-		if numResults == numRegions {
-			close(ch) // will break the loop
-		}
+		// NOTE: this method was unreliable and would sometimes hang
+		//       seems like some of the ping tests would not report back
+		// if numResults == numRegions {
+		// 	close(ch) // will break the loop
+		// }
 	}
 
 	return closestRegion, nil
@@ -223,14 +242,51 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 // GetVMInfo will get details of a VM
 func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 
-	instanceID := string(vmID)
-	_, err = m.api.Server.GetServer(context.Background(), instanceID)
-	// server, err := m.api.Server.GetServer(context.Background(), instanceID)
+	instanceID := strconv.Itoa(vmID)
+	server, err := m.api.Server.GetServer(context.Background(), instanceID)
 	if err != nil {
 		return vmInfo, err
 	}
 
-	//Convert to vmInfo format
+	//Convert info to our format
+	vmInfo.ID, _ = strconv.Atoi(server.InstanceID)
+	vmInfo.Name = server.Label
+	vmInfo.Region = core.RegionInfo{
+		Name: server.Location,
+		Slug: server.RegionID,
+	}
+	//TODO set RAM, Disk, VPSCpus, Cost (both in size and in vminfo)
+	// issue is these are not standard formats
+	vmInfo.Size = core.SizeInfo{
+		Slug: server.PlanID,
+	}
+	imageID, _ := strconv.Atoi(server.OsID)
+	vmInfo.Image = core.ImageInfo{
+		ID:   imageID,
+		Name: server.Os,
+	}
+	vmInfo.CreatedAt = server.Created
+	vmInfo.Tags = append(vmInfo.Tags, server.Tag)
+
+	// only status that needs to be standardized is final one that server is up
+	// at vultr that is "ok"
+	if strings.Compare(server.ServerState, "ok") == 0 {
+		vmInfo.Status = "running"
+	} else {
+		if strings.Compare(server.Status, "pending") == 0 {
+			// serverstatus will be 'none' so use status instead
+			vmInfo.Status = server.Status
+		} else {
+			vmInfo.Status = server.ServerState
+		}
+	}
+	// get public IP address
+	vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, core.V4NetworkInfo{
+		IPAddress: server.MainIP,
+		Netmask:   server.NetmaskV4,
+		Gateway:   server.GatewayV4,
+		Type:      "public",
+	})
 
 	return vmInfo, nil
 }
@@ -246,21 +302,25 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	}
 	keyIDs := []string{keyID}
 
-	// TODO
-	// don't pass a fingerprint.  pass our own sshkey object
-	// use the ssh fingerprint to find the ssh key id
-
 	regionID, _ := strconv.Atoi(region)
 	sizeInt, _ := strconv.Atoi(size)
 	imageID, _ := strconv.Atoi(image)
 	options := govultr.ServerOptions{
+		Label:     name,
 		SSHKeyIDs: keyIDs,
+		Tag:       "eezhee",
 	}
 	server, err := m.api.Server.Create(context.Background(), regionID, sizeInt, imageID, &options)
 	if err != nil {
 		return vmInfo, err
 	}
-	fmt.Println(server)
+	fmt.Println("vm being created. id:", server.InstanceID)
+
+	// transfer data to vmInfo
+	vmInfo.ID, err = strconv.Atoi(server.InstanceID)
+	if err != nil {
+		return vmInfo, err
+	}
 
 	return vmInfo, nil
 }
@@ -277,6 +337,9 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 
 // DeleteVM will delete a given VM
 func (m *Manager) DeleteVM(ID int) error {
+
+	// NOTE: if current status is 'pending' then can't delete (yet)
+	//       need to wait until build completed first
 
 	instanceID := string(ID)
 	err := m.api.Server.Delete(context.Background(), instanceID)
