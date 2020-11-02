@@ -68,9 +68,15 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 	keyPairInfo.SetKeyName("athir")
 	keyPairInfo.SetPublicKeyMaterial([]byte("dakjfdalkjfadslkj"))
 	//keyPairInfo.SetDryRun()
-	keyPairInfo.Validate()
+	err = keyPairInfo.Validate()
+	if err != nil {
+		return keyID, err
+	}
 
 	keyPair, err := svc.ImportKeyPair(&keyPairInfo)
+	if err != nil {
+		return keyID, err
+	}
 	keyID = *keyPair.KeyPairId
 	fmt.Println(keyPair.KeyFingerprint)
 
@@ -95,7 +101,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 	// test each region
 	var lowestPingTime = math.MaxInt64
-	var regions []regionPingTimes
+	// var regions []regionPingTimes
 	for _, awsRegion := range awsRegions.Regions {
 
 		// OptInStatus // opt-in-not-required, opted-in and not-opted-in
@@ -115,7 +121,8 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 			lowestPingTime = int(pingTime)
 		}
 
-		regions = append(regions, region)
+		// regions = append(regions, region)
+		// regions has unordered list of all ping times
 	}
 
 	return closestRegion, nil

@@ -27,45 +27,41 @@ type Plan struct {
 
 // plans are ordered by price, which normally correlates with larger CPU,RAM & disk
 // TODO: more dynamic way would be to get list and sort by price
-var planOrder []int = []int{201, 202, 203, 204, 205, 206, 207, 208}
+// var planOrder []int = []int{201, 202, 203, 204, 205, 206, 207, 208}
 
 const maxPingTime = 2 * time.Second // assumes there will be atleast one region closer than this
 
 type regionPingTime struct {
 	id      string // region ID
-	name    string // region name/code
 	address string // ip address or hostname (in region) that we can use for ping test
 	time    int    // ping time for given ip address (in msec)
 }
 
 var regionIPs = []regionPingTime{
-	{"3", "DFW", "tx-us-ping.vultr.com", 0},
-	{"5", "LAX", "lax-ca-us-ping.vultr.com", 0},
-	{"39", "MIA", "fl-us-ping.vultr.com", 0},
-	{"12", "SJC", "sjo-ca-us-ping.vultr.com", 0},
-	{"2", "ORD", "il-us-ping.vultr.com", 0},
-	{"4", "SEA", "wa-us-ping.vultr.com", 0},
-	{"1", "EWR", "nj-us-ping.vultr.com", 0},
-	{"6", "ATL", "ga-us-ping.vultr.com", 0},
-
-	{"22", "TYO", "tor-ca-ping.vultr.com", 0},
-
-	{"24", "CDG", "par-fr-ping.vultr.com", 0},
-	{"9", "FRA", "fra-de-ping.vultr.com", 0},
-	{"7", "AMS", "ams-nl-ping.vultr.com", 0},
-	{"8", "LHR", "lon-gb-ping.vultr.com", 0},
-
-	{"40", "SGP", "sgp-ping.vultr.com", 0},
-	{"34", "ICN", "sel-kor-ping.vultr.com", 0},
-	{"25", "NRT", "hnd-jp-ping.vultr.com", 0},
-	{"19", "SYD", "syd-au-ping.vultr.com", 0},
+	{"3", "tx-us-ping.vultr.com", 0},
+	{"5", "lax-ca-us-ping.vultr.com", 0},
+	{"39", "fl-us-ping.vultr.com", 0},
+	{"12", "sjo-ca-us-ping.vultr.com", 0},
+	{"2", "il-us-ping.vultr.com", 0},
+	{"4", "wa-us-ping.vultr.com", 0},
+	{"1", "nj-us-ping.vultr.com", 0},
+	{"6", "ga-us-ping.vultr.com", 0},
+	{"22", "tor-ca-ping.vultr.com", 0},
+	{"24", "par-fr-ping.vultr.com", 0},
+	{"9", "fra-de-ping.vultr.com", 0},
+	{"7", "ams-nl-ping.vultr.com", 0},
+	{"8", "lon-gb-ping.vultr.com", 0},
+	{"40", "sgp-ping.vultr.com", 0},
+	{"34", "sel-kor-ping.vultr.com", 0},
+	{"25", "hnd-jp-ping.vultr.com", 0},
+	{"19", "syd-au-ping.vultr.com", 0},
 }
 
 // Manager controls access to AWS
 type Manager struct {
 	APIToken string
 	api      *govultr.Client
-	plans    []Plan
+	// plans    []Plan
 }
 
 // NewManager creates a manage object & inits it
@@ -88,24 +84,24 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // getPlans will get all active plans and sort by price
-func (m *Manager) getCurentPlans() error {
+// func (m *Manager) getCurentPlans() error {
 
-	// get plans
-	plans, err := m.api.Plan.List(context.Background(), "vc2")
-	if err != nil {
-		return err
-	}
+// 	// get plans
+// 	plans, err := m.api.Plan.List(context.Background(), "vc2")
+// 	if err != nil {
+// 		return err
+// 	}
 
-	for _, plan := range plans {
-		fmt.Println(plan.Name)
-		// plan 201 is $5, name: "1024 MB RAM,25 GB SSD,1.00 TB BW"
-	}
+// 	for _, plan := range plans {
+// 		fmt.Println(plan.Name)
+// 		// plan 201 is $5, name: "1024 MB RAM,25 GB SSD,1.00 TB BW"
+// 	}
 
-	// sort in order
-	// store plan list in object
+// 	// sort in order
+// 	// store plan list in object
 
-	return nil
-}
+// 	return nil
+// }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err error) {
@@ -183,7 +179,6 @@ func getPingTime(pingTest regionPingTime, ch chan regionPingTime) {
 	// callers waits until gets all results
 	ch <- pingTest
 
-	return
 }
 
 // SelectClosestRegion will ping all regions and return the ID of the closest
@@ -329,6 +324,9 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 
 	servers, err := m.api.Server.List(context.Background())
+	if err != nil {
+		return vmInfo, err
+	}
 	for _, server := range servers {
 		fmt.Println(server.InstanceID, server.Status, server.Location, server.MainIP)
 	}
