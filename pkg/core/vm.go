@@ -8,11 +8,11 @@ import (
 // VMManager is the interface all cloud provider need to follow
 type VMManager interface {
 	ListVMs() (vmInfo []VMInfo, err error)
-	CreateVM(name string, image string, size string, region string, sshFingerprint string) (VMInfo, error)
+	CreateVM(name string, image string, size string, region string, sshKey SSHKey) (VMInfo, error)
 	GetVMInfo(vmID int) (vmInfo VMInfo, err error)
 	DeleteVM(ID int) error
 	// UploadSSHKey()
-	IsSSHKeyUploaded(fingerprint string) (bool, error)
+	IsSSHKeyUploaded(sshKey SSHKey) (string, error)
 	SelectClosestRegion() (closestRegion string, err error)
 }
 

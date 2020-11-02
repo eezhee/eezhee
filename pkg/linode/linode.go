@@ -3,47 +3,22 @@ package linode
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/eezhee/eezhee/pkg/core"
-	"github.com/go-ping/ping"
 	"github.com/linode/linodego"
 	"github.com/sethvargo/go-password/password"
 	"golang.org/x/oauth2"
 )
 
-const maxPingTime = 750
-
 type regionPingTimes struct {
-	name      string
-	ipAddress string
+	name      string // region name
+	ipAddress string // ip address in region that we can use for ping tests
+	result    int64  // ping time for given ip address
 }
-
-func getPingTime(ipAddress string) (pingTime int64, err error) {
-
-	pinger, err := ping.NewPinger(ipAddress)
-	// pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-	pinger.Count = 3
-	err = pinger.Run() // blocks until finished
-	if err != nil {
-		return 0, err
-	}
-	stats := pinger.Statistics() // get send/receive/rtt stats
-
-	pingTime = stats.AvgRtt.Milliseconds()
-
-	return pingTime, nil
-}
-
-// func strCopy(i string) *string {
-// 	return &i
-// }
 
 // Manager handles interactions with DigitalOcean API
 type Manager struct {
@@ -75,40 +50,41 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
-func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
+func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 	// don't need to do anything as ssh key is added during instance creation
 
-	return true, nil
+	return "1", nil
 }
 
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 	regionIPs := []regionPingTimes{
-		{"ca-central", "speedtest.toronto1.linode.com"},
-		{"us-central", "speedtest.dallas.linode.com"},
-		{"us-west", "speedtest.fremont.linode.com"},
-		{"us-east", "speedtest.newark.linode.com"},
-		{"eu-central", "speedtest.frankfurt.linode.com"},
-		{"eu-west", "speedtest.london.linode.com"},
-		{"ap-south", "speedtest.singapore.linode.com"},
-		{"ap-southeast", "speedtest.syd1.linode.com"},
-		{"ap-west", "speedtest.mumbai1.linode.com"},
-		{"ap-northeast", "speedtest.tokyo2.linode.com"},
+		{"ca-central", "speedtest.toronto1.linode.com", 0},
+		{"us-central", "speedtest.dallas.linode.com", 0},
+		{"us-west", "speedtest.fremont.linode.com", 0},
+		{"us-east", "speedtest.newark.linode.com", 0},
+		{"eu-central", "speedtest.frankfurt.linode.com", 0},
+		{"eu-west", "speedtest.london.linode.com", 0},
+		{"ap-south", "speedtest.singapore.linode.com", 0},
+		{"ap-southeast", "speedtest.syd1.linode.com", 0},
+		{"ap-west", "speedtest.mumbai1.linode.com", 0},
+		{"ap-northeast", "speedtest.tokyo2.linode.com", 0},
 	}
 
 	// default to NYC
 	closestRegion = "us-east"
+
 	// get ping time to each region
 	// to see which is the closest
-	var lowestPingTime = maxPingTime
+	var lowestPingTime = math.MaxInt64
 	for _, region := range regionIPs {
-		pingTime, err := getPingTime(region.ipAddress)
+		pingTime, err := core.GetPingTime(region.ipAddress)
 		if err != nil {
 			return "", err
 		}
-		// fmt.Println(region.name, ": ", pingTime, "mSec")
+		region.result = pingTime
 
 		// is this datacenter closer than others we've seen so far
 		if int(pingTime) < lowestPingTime {
@@ -126,7 +102,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 }
 
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshKey core.SSHKey) (core.VMInfo, error) {
 	var vmInfo core.VMInfo
 
 	// generate a strong root password.  we will through this away
@@ -145,8 +121,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		RootPass: rootPassword,
 	}
 
-	// TODO - don't want ssh fingerprint.  want public key - should we have an interface for ssh keys?
-	createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAocQ68fyqU/QZJYrpGrM+tkJDfUPefFPa2Qc+C2BHom3gysv8vqwmFgdVs6Z75rPkUNitpIxUYGPovJbG5pFE6qRNxK3ZHxbk1TSlFBcL8w7jd/jt4IuHwslO4R+hxLG0vzGVFpKSKjAM6yac+q8wOtFU7pKpmrGx9oyClrVQb4mSbCdDazf7/uzXpKMg5mgONbjT6AWSpos2cUDH+VNAQKEnFxKWYjEddCqJnN2kIvtvJUeVhaxYjSVgtiJ7/e0KboDBKRRtO+b4v2TmWmGoRhrPqMo3GazU9aSOAEOMrl3SrxkjmH+eRCUA+1zdvwes8ncVK36FNXzFJ7CxGEAHrw== athir@nuaimi.com")
+	createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, sshKey.GetPublicKey())
 	createOptions.Tags = append(createOptions.Tags, "eezhee")
 	newInstance, err := m.api.CreateInstance(context.Background(), createOptions)
 	if err != nil {

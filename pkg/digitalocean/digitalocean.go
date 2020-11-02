@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/eezhee/eezhee/pkg/core"
-	"github.com/go-ping/ping"
 )
-
-const maxPingTime = 750
 
 // datacenters: ams2","ams3","blr1","fra1","lon1","nyc1","nyc2","nyc3","sfo1","sfo2","sfo3","sgp1","tor1"
 // sizes:
@@ -49,63 +48,45 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
-func (m *Manager) IsSSHKeyUploaded(fingerprint string) (bool, error) {
+func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 	ctx := context.TODO()
 
 	// get list of sshkeys DO knows about
 	sshKeys, _, err := m.api.Keys.List(ctx, nil)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	// go through each key and see if it matches what is on this machine
 	for _, sshKey := range sshKeys {
-		if strings.Compare(fingerprint, sshKey.Fingerprint) == 0 {
-			return true, nil
+		if strings.Compare(desiredSSHKey.Fingerprint(), sshKey.Fingerprint) == 0 {
+			keyID := strconv.Itoa(sshKey.ID)
+			return keyID, nil
 		}
 	}
 
-	return false, errors.New("ssh key not available on digitalocean")
+	return "", errors.New("ssh key not available on digitalocean")
 }
 
 type regionPingTimes struct {
-	name      string
-	ipAddress string
-}
-
-func getPingTime(ipAddress string) (pingTime int64, err error) {
-
-	pinger, err := ping.NewPinger(ipAddress)
-	// pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-	pinger.Count = 3
-	err = pinger.Run() // blocks until finished
-	if err != nil {
-		return 0, err
-	}
-	stats := pinger.Statistics() // get send/receive/rtt stats
-
-	pingTime = stats.AvgRtt.Milliseconds()
-
-	return pingTime, nil
+	name      string // region name
+	ipAddress string // ip address in region that we can use for ping tests
+	result    int64  // ping time for given ip address
 }
 
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 	regionIPs := []regionPingTimes{
-		{"ams2", "206.189.240.1"},
-		{"blr1", "143.110.180.2"},
-		{"fra1", "138.68.109.1"},
-		{"lon1", "209.97.176.1"},
-		{"nyc1", "192.241.251.1"},
-		{"sfo1", "198.199.113.1"},
-		{"sgp1", "209.97.160.1"},
-		{"tor1", "68.183.194.1"},
+		{"ams2", "206.189.240.1", 0},
+		{"blr1", "143.110.180.2", 0},
+		{"fra1", "138.68.109.1", 0},
+		{"lon1", "209.97.176.1", 0},
+		{"nyc1", "192.241.251.1", 0},
+		{"sfo1", "198.199.113.1", 0},
+		{"sgp1", "209.97.160.1", 0},
+		{"tor1", "68.183.194.1", 0},
 	}
 
 	// default to NYC
@@ -113,13 +94,13 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 	// get ping time to each region
 	// to see which is the closest
-	var lowestPingTime = maxPingTime
+	var lowestPingTime = math.MaxInt64
 	for _, region := range regionIPs {
-		pingTime, err := getPingTime(region.ipAddress)
+		pingTime, err := core.GetPingTime(region.ipAddress)
 		if err != nil {
 			return "", err
 		}
-		// fmt.Println(region.name, ": ", pingTime, "mSec")
+		region.result = pingTime
 
 		// is this datacenter closer than others we've seen so far
 		if int(pingTime) < lowestPingTime {
@@ -149,7 +130,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 }
 
 // CreateVM will create a new VM
-func (m *Manager) CreateVM(name string, image string, size string, region string, sshFingerprint string) (core.VMInfo, error) {
+func (m *Manager) CreateVM(name string, image string, size string, region string, sshKey core.SSHKey) (core.VMInfo, error) {
 
 	var vmInfo core.VMInfo
 
@@ -160,7 +141,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		Image: godo.DropletCreateImage{
 			Slug: image,
 		},
-		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: sshFingerprint}},
+		SSHKeys: []godo.DropletCreateSSHKey{{Fingerprint: sshKey.Fingerprint()}},
 		// Volumes: []godo.DropletCreateVolume{
 		// 	{Name: "hello-im-a-volume"},
 		// 	{ID: "hello-im-another-volume"},
@@ -237,7 +218,12 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error)
 		Slug:     dropletInfo.Region.Slug,
 		Features: dropletInfo.Region.Features,
 	}
-	vmInfo.Status = dropletInfo.Status
+	// need to convert final status to standard format
+	if dropletInfo.Status == "active" {
+		vmInfo.Status = "running"
+	} else {
+		vmInfo.Status = dropletInfo.Status
+	}
 	// vmInfo.SizeSlug = dropletInfo.SizeSlug
 	vmInfo.CreatedAt = dropletInfo.Created
 	vmInfo.Image = core.ImageInfo{

@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/eezhee/eezhee/pkg/config"
+	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
+	"github.com/eezhee/eezhee/pkg/linode"
+	"github.com/eezhee/eezhee/pkg/vultr"
 	"github.com/spf13/cobra"
 )
 
@@ -54,20 +56,27 @@ func teardownVM() error {
 
 	// see which cloud cluster created on
 	cloud := deployStateFile.Cloud
-	if strings.Compare(cloud, "digitalocean") != 0 {
+	var manager core.VMManager
+
+	switch cloud {
+	case "digitalocean":
+		manager = digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
+	case "linode":
+		manager = linode.NewManager(appConfig.LinodeAPIKey)
+	case "vultr":
+		manager = vultr.NewManager(appConfig.VultrAPIKey)
+	default:
 		return errors.New("state file reference cloud we don't support: ")
 	}
 
 	// get details of VM
 	ID := deployStateFile.ID
 	if ID == 0 {
-
 		msg := fmt.Sprintf("invalid VM ID: %d - Can not teardown VM\n", ID)
 		return errors.New(msg)
 	}
 
 	// ready to delete the cluster
-	manager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
 	err = manager.DeleteVM(ID)
 	if err != nil {
 		return err
