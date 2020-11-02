@@ -273,7 +273,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 	if strings.Compare(server.ServerState, "ok") == 0 {
 		vmInfo.Status = "running"
 	} else {
-		if strings.Compare(server.Status, "pending") == 0 {
+		if strings.Compare(server.Status, "pending") == 0 { // TODO: powerstatus = 'stopped' show that rather than 'locked'
 			// serverstatus will be 'none' so use status instead
 			vmInfo.Status = server.Status
 		} else {
@@ -314,7 +314,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	if err != nil {
 		return vmInfo, err
 	}
-	fmt.Println("vm being created. id:", server.InstanceID)
+	fmt.Println("vm", server.InstanceID, "created")
 
 	// transfer data to vmInfo
 	vmInfo.ID, err = strconv.Atoi(server.InstanceID)
