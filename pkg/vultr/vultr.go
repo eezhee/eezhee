@@ -341,7 +341,7 @@ func (m *Manager) DeleteVM(ID int) error {
 	// NOTE: if current status is 'pending' then can't delete (yet)
 	//       need to wait until build completed first
 
-	instanceID := string(ID)
+	instanceID := strconv.Itoa(ID)
 	err := m.api.Server.Delete(context.Background(), instanceID)
 	if err != nil {
 		return err
