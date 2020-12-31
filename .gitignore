@@ -1,6 +1,7 @@
 .vscode
 .DS_Store
 eezhee
+eezhee.exe
 release
 kubeconfig
 *.yaml
