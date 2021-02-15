@@ -2,9 +2,12 @@ package main
 
 import (
 	"github.com/eezhee/eezhee/cmd"
+	"github.com/eezhee/eezhee/pkg/k3d"
 )
 
 func main() {
+
+	k3d.CreateK3dCluster()
 
 	cmd.Execute()
 

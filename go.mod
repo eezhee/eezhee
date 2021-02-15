@@ -15,6 +15,7 @@ require (
 	github.com/docker/cli v20.10.3+incompatible // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.3+incompatible // indirect
+	github.com/docker/go-connections v0.4.0 
 	github.com/go-ping/ping v0.0.0-20210207230027-ab39f29b51f8
 	github.com/go-resty/resty/v2 v2.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
