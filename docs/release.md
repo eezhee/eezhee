@@ -6,3 +6,5 @@
 1. create a draft release on github.  add details of what is in the release
 1. upload the binary and signature to the draft release
 1. publish the release
+1. update the brew script on homebrew-eezhee
+
