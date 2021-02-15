@@ -32,6 +32,7 @@ require (
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/rancher/k3d/v4 v4.2.0
 	github.com/sethvargo/go-password v0.2.0
+	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
@@ -47,7 +48,6 @@ require (
 	google.golang.org/grpc v1.35.0 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.20.2 // indirect
 	k8s.io/client-go v0.20.2 // indirect
 	k8s.io/klog/v2 v2.5.0 // indirect
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
