@@ -9,10 +9,18 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    # gobinary: "go1.16"
     goos:
       - linux
       - windows
       - darwin
+    ignore:
+      - goos: windows
+        goarch: 386
+      - goos: linux
+        goarch: 386
+      - goos: linux
+        goarch: arm64
 archives:
   - replacements:
       darwin: Darwin

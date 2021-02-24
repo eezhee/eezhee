@@ -78,7 +78,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 	// get ping time to each region
 	// to see which is the closest
-	var lowestPingTime = math.MaxInt64
+	var lowestPingTime = math.MaxInt32
 	for _, region := range regionIPs {
 		pingTime, err := core.GetPingTime(region.ipAddress)
 		if err != nil {

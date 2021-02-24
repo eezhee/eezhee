@@ -100,7 +100,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 	}
 
 	// test each region
-	var lowestPingTime = math.MaxInt64
+	var lowestPingTime = math.MaxInt32
 	// var regions []regionPingTimes
 	for _, awsRegion := range awsRegions.Regions {
 
