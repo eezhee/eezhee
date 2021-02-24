@@ -3,6 +3,7 @@
 eezhee
 eezhee.exe
 release
+dist
 kubeconfig
 *.yaml
 eezhee-sha256sum.sha

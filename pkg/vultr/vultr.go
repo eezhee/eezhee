@@ -210,7 +210,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 	// reading result until we have them all
 	numResults := 0
-	lowestPingTime := math.MaxInt64
+	lowestPingTime := math.MaxInt32
 	for result := range ch {
 
 		numResults++
