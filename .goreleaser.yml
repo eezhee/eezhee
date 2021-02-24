@@ -46,4 +46,4 @@ brews:
     description: "The easiest and fastest way to create a kubernutes cluster on a variety of clouds"    
     license: "Apache 2.0"
     homepage: "https://github.com/eezhee/eezhee"
-    skip_upload: true
+    skip_upload: false

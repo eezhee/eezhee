@@ -9,15 +9,18 @@
 1. upload the binary and signature to the draft release
 1. publish the release
 
-## Creating a Build (v2)
+## Creating a Test Build (v2)
 
-1. build the binaries with `goreleaser release --rm-dist --snapshot`
+1. build the binaries with `goreleaser release --rm-dist --skip-upload`
+
+This will create the binaries and associated files in `dist`.  Review the changelog 
 
 ## Creating a Release (v2)
 
-1. update the version number in `/cmd/version.go`
-1. tag the commit with `git tag vX.Y.Z`
-1. when you merge to master, a new release will be created automatically
+1. update the version number in `/cmd/version.go`.  Check in the change and merge into master.
+1. tag the commit with `git tag vX.Y.Z` and `git push origin vX.Y.Z`
+1. make sure you have the GITHUB_TOKEN environment variable setup
+1. run `goreleaser` on your laptop.  `goreleaser release --rm-dist`
 
 ## Cleanup
 
