@@ -1,0 +1,455 @@
+{
+   "links" : {
+      "pages" : {
+         "last" : "https://api.digitalocean.com/v2/sizes?page=5&per_page=20",
+         "next" : "https://api.digitalocean.com/v2/sizes?page=2&per_page=20"
+      }
+   },
+   "meta" : {
+      "total" : 94
+   },
+   "sizes" : [
+      {
+         "available" : true,
+         "description" : "Basic",
+         "disk" : 25,
+         "memory" : 1024,
+         "price_hourly" : 0.00744,
+         "price_monthly" : 5,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-1vcpu-1gb",
+         "transfer" : 1,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Basic",
+         "disk" : 20,
+         "memory" : 512,
+         "price_hourly" : 0.00744,
+         "price_monthly" : 5,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "512mb",
+         "transfer" : 1,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Basic AMD",
+         "disk" : 25,
+         "memory" : 1024,
+         "price_hourly" : 0.00893,
+         "price_monthly" : 6,
+         "regions" : [
+            "fra1",
+            "nyc3",
+            "sfo3"
+         ],
+         "slug" : "s-1vcpu-1gb-amd",
+         "transfer" : 1,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Basic Intel",
+         "disk" : 25,
+         "memory" : 1024,
+         "price_hourly" : 0.00893,
+         "price_monthly" : 6,
+         "regions" : [
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc3",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "s-1vcpu-1gb-intel",
+         "transfer" : 1,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Basic",
+         "disk" : 50,
+         "memory" : 2048,
+         "price_hourly" : 0.01488,
+         "price_monthly" : 10,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-1vcpu-2gb",
+         "transfer" : 2,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Basic",
+         "disk" : 30,
+         "memory" : 1024,
+         "price_hourly" : 0.01488,
+         "price_monthly" : 10,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "1gb",
+         "transfer" : 2,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Basic AMD",
+         "disk" : 50,
+         "memory" : 2048,
+         "price_hourly" : 0.01786,
+         "price_monthly" : 12,
+         "regions" : [
+            "fra1",
+            "nyc3",
+            "sfo3"
+         ],
+         "slug" : "s-1vcpu-2gb-amd",
+         "transfer" : 2,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Basic Intel",
+         "disk" : 50,
+         "memory" : 2048,
+         "price_hourly" : 0.01786,
+         "price_monthly" : 12,
+         "regions" : [
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc3",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "s-1vcpu-2gb-intel",
+         "transfer" : 2,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Basic",
+         "disk" : 60,
+         "memory" : 1024,
+         "price_hourly" : 0.02232,
+         "price_monthly" : 15,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-3vcpu-1gb",
+         "transfer" : 3,
+         "vcpus" : 3
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Basic",
+         "disk" : 60,
+         "memory" : 2048,
+         "price_hourly" : 0.02232,
+         "price_monthly" : 15,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-2vcpu-2gb",
+         "transfer" : 3,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Basic",
+         "disk" : 60,
+         "memory" : 3072,
+         "price_hourly" : 0.02232,
+         "price_monthly" : 15,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-1vcpu-3gb",
+         "transfer" : 3,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "Basic AMD",
+         "disk" : 60,
+         "memory" : 2048,
+         "price_hourly" : 0.02679,
+         "price_monthly" : 18,
+         "regions" : [
+            "fra1",
+            "nyc3",
+            "sfo3"
+         ],
+         "slug" : "s-2vcpu-2gb-amd",
+         "transfer" : 3,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Basic Intel",
+         "disk" : 60,
+         "memory" : 2048,
+         "price_hourly" : 0.02679,
+         "price_monthly" : 18,
+         "regions" : [
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc3",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "s-2vcpu-2gb-intel",
+         "transfer" : 3,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Basic",
+         "disk" : 80,
+         "memory" : 4096,
+         "price_hourly" : 0.02976,
+         "price_monthly" : 20,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-2vcpu-4gb",
+         "transfer" : 4,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Basic",
+         "disk" : 40,
+         "memory" : 2048,
+         "price_hourly" : 0.02976,
+         "price_monthly" : 20,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "2gb",
+         "transfer" : 3,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Basic AMD",
+         "disk" : 80,
+         "memory" : 4096,
+         "price_hourly" : 0.03571,
+         "price_monthly" : 24,
+         "regions" : [
+            "fra1",
+            "nyc3",
+            "sfo3"
+         ],
+         "slug" : "s-2vcpu-4gb-amd",
+         "transfer" : 4,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Basic Intel",
+         "disk" : 80,
+         "memory" : 4096,
+         "price_hourly" : 0.03571,
+         "price_monthly" : 24,
+         "regions" : [
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc3",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "s-2vcpu-4gb-intel",
+         "transfer" : 4,
+         "vcpus" : 2
+      },
+      {
+         "available" : true,
+         "description" : "Basic",
+         "disk" : 160,
+         "memory" : 8192,
+         "price_hourly" : 0.05952,
+         "price_monthly" : 40,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "s-4vcpu-8gb",
+         "transfer" : 5,
+         "vcpus" : 4
+      },
+      {
+         "available" : true,
+         "description" : "Legacy Memory-Optimized",
+         "disk" : 40,
+         "memory" : 8192,
+         "price_hourly" : 0.05952,
+         "price_monthly" : 40,
+         "regions" : [
+            "ams2",
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc2",
+            "nyc3",
+            "sfo1",
+            "sfo3",
+            "tor1"
+         ],
+         "slug" : "m-1vcpu-8gb",
+         "transfer" : 5,
+         "vcpus" : 1
+      },
+      {
+         "available" : true,
+         "description" : "CPU-Optimized",
+         "disk" : 25,
+         "memory" : 4096,
+         "price_hourly" : 0.05952,
+         "price_monthly" : 40,
+         "regions" : [
+            "ams3",
+            "blr1",
+            "fra1",
+            "lon1",
+            "nyc1",
+            "nyc3",
+            "sfo3",
+            "sgp1",
+            "tor1"
+         ],
+         "slug" : "c-2",
+         "transfer" : 4,
+         "vcpus" : 2
+      }
+   ]
+}

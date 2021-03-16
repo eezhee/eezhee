@@ -1,0 +1,167 @@
+{
+   "meta" : {
+      "links" : {
+         "next" : "",
+         "prev" : ""
+      },
+      "total" : 26
+   },
+   "os" : [
+      {
+         "arch" : "x64",
+         "family" : "windows",
+         "id" : 124,
+         "name" : "Windows 2012 R2 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "iso",
+         "id" : 159,
+         "name" : "Custom"
+      },
+      {
+         "arch" : "x64",
+         "family" : "snapshot",
+         "id" : 164,
+         "name" : "Snapshot"
+      },
+      {
+         "arch" : "x64",
+         "family" : "centos",
+         "id" : 167,
+         "name" : "CentOS 7 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "backup",
+         "id" : 180,
+         "name" : "Backup"
+      },
+      {
+         "arch" : "x64",
+         "family" : "application",
+         "id" : 186,
+         "name" : "Application"
+      },
+      {
+         "arch" : "i386",
+         "family" : "debian",
+         "id" : 194,
+         "name" : "Debian 8 i386 (jessie)"
+      },
+      {
+         "arch" : "x64",
+         "family" : "ubuntu",
+         "id" : 215,
+         "name" : "Ubuntu 16.04 x64"
+      },
+      {
+         "arch" : "i386",
+         "family" : "ubuntu",
+         "id" : 216,
+         "name" : "Ubuntu 16.04 i386"
+      },
+      {
+         "arch" : "x64",
+         "family" : "freebsd",
+         "id" : 230,
+         "name" : "FreeBSD 11 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "windows",
+         "id" : 240,
+         "name" : "Windows 2016 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "debian",
+         "id" : 244,
+         "name" : "Debian 9 x64 (stretch)"
+      },
+      {
+         "arch" : "x64",
+         "family" : "ubuntu",
+         "id" : 270,
+         "name" : "Ubuntu 18.04 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "freebsd",
+         "id" : 327,
+         "name" : "FreeBSD 12 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "debian",
+         "id" : 352,
+         "name" : "Debian 10 x64 (buster)"
+      },
+      {
+         "arch" : "x64",
+         "family" : "centos",
+         "id" : 362,
+         "name" : "CentOS 8 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "centos",
+         "id" : 381,
+         "name" : "CentOS 7 SELinux x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "ubuntu",
+         "id" : 387,
+         "name" : "Ubuntu 20.04 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "fedora",
+         "id" : 389,
+         "name" : "Fedora 32 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "fedora-coreos",
+         "id" : 391,
+         "name" : "Fedora CoreOS"
+      },
+      {
+         "arch" : "x64",
+         "family" : "openbsd",
+         "id" : 394,
+         "name" : "OpenBSD 6.7 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "centos",
+         "id" : 401,
+         "name" : "CentOS 8 Stream x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "openbsd",
+         "id" : 412,
+         "name" : "OpenBSD 6.8 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "ubuntu",
+         "id" : 413,
+         "name" : "Ubuntu 20.10 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "fedora",
+         "id" : 415,
+         "name" : "Fedora 33 x64"
+      },
+      {
+         "arch" : "x64",
+         "family" : "marketplace_app",
+         "id" : 426,
+         "name" : "Marketplace App"
+      }
+   ]
+}
