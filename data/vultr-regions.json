@@ -1,0 +1,154 @@
+{
+   "meta" : {
+      "links" : {
+         "next" : "",
+         "prev" : ""
+      },
+      "total" : 17
+   },
+   "regions" : [
+      {
+         "city" : "Amsterdam",
+         "continent" : "Europe",
+         "country" : "NL",
+         "id" : "ams",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Atlanta",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "atl",
+         "options" : []
+      },
+      {
+         "city" : "Paris",
+         "continent" : "Europe",
+         "country" : "FR",
+         "id" : "cdg",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Dallas",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "dfw",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "New Jersey",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "ewr",
+         "options" : [
+            "ddos_protection",
+            "block_storage"
+         ]
+      },
+      {
+         "city" : "Frankfurt",
+         "continent" : "Europe",
+         "country" : "DE",
+         "id" : "fra",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Seoul",
+         "continent" : "Asia",
+         "country" : "KR",
+         "id" : "icn",
+         "options" : []
+      },
+      {
+         "city" : "Los Angeles",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "lax",
+         "options" : [
+            "ddos_protection",
+            "block_storage"
+         ]
+      },
+      {
+         "city" : "London",
+         "continent" : "Europe",
+         "country" : "GB",
+         "id" : "lhr",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Miami",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "mia",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Tokyo",
+         "continent" : "Asia",
+         "country" : "JP",
+         "id" : "nrt",
+         "options" : []
+      },
+      {
+         "city" : "Chicago",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "ord",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Seattle",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "sea",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Singapore",
+         "continent" : "Asia",
+         "country" : "SG",
+         "id" : "sgp",
+         "options" : []
+      },
+      {
+         "city" : "Silicon Valley",
+         "continent" : "North America",
+         "country" : "US",
+         "id" : "sjc",
+         "options" : [
+            "ddos_protection"
+         ]
+      },
+      {
+         "city" : "Sydney",
+         "continent" : "Australia",
+         "country" : "AU",
+         "id" : "syd",
+         "options" : []
+      },
+      {
+         "city" : "Toronto",
+         "continent" : "North America",
+         "country" : "CA",
+         "id" : "yto",
+         "options" : []
+      }
+   ]
+}
