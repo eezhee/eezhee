@@ -5,5 +5,5 @@ eezhee.exe
 release
 dist
 kubeconfig
-*.yaml
+deploy.yaml
 eezhee-sha256sum.sha
