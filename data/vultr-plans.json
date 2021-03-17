@@ -205,9 +205,6 @@
          "disk_count" : 1,
          "id" : "vc2-24c-96gb",
          "locations" : [
-            "lax",
-            "atl",
-            "sjc",
             "nrt",
             "icn"
          ],
@@ -361,12 +358,12 @@
             "sea",
             "lax",
             "atl",
+            "ams",
             "lhr",
             "fra",
             "sjc",
             "syd",
             "yto",
-            "nrt",
             "icn",
             "mia",
             "sgp"
@@ -430,6 +427,7 @@
             "dfw",
             "lax",
             "atl",
+            "fra",
             "syd",
             "icn",
             "mia"
@@ -465,7 +463,6 @@
             "ord",
             "dfw",
             "lax",
-            "atl",
             "icn"
          ],
          "monthly_cost" : 256,
