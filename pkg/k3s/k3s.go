@@ -133,7 +133,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 	}
 
 	fmt.Println("cluster is ready")
-	fmt.Println("you can access using `kubectl --kubeconfig .\\kubeconfig get pods`")
+	fmt.Println("you can access using `kubectl --kubeconfig ./kubeconfig get pods`")
 
 	return true
 }
