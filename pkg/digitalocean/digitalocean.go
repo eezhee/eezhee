@@ -4,13 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/eezhee/eezhee/pkg/core"
 )
+
+// ip addresses to use to find closest region
+var regionIPs = []core.IPPingTime{
+	{ID: "ams2", Address: "206.189.240.1"},
+	{ID: "blr1", Address: "143.110.180.2"},
+	{ID: "fra1", Address: "138.68.109.1"},
+	{ID: "lon1", Address: "209.97.176.1"},
+	{ID: "nyc1", Address: "192.241.251.1"},
+	{ID: "sfo1", Address: "198.199.113.1"},
+	{ID: "sgp1", Address: "209.97.160.1"},
+	{ID: "tor1", Address: "68.183.194.1"},
+}
 
 // datacenters: ams2","ams3","blr1","fra1","lon1","nyc1","nyc2","nyc3","sfo1","sfo2","sfo3","sgp1","tor1"
 // sizes:
@@ -69,47 +80,9 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 	return "", errors.New("ssh key not available on digitalocean")
 }
 
-type regionPingTimes struct {
-	name      string // region name
-	ipAddress string // ip address in region that we can use for ping tests
-	result    int64  // ping time for given ip address
-}
-
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-
-	regionIPs := []regionPingTimes{
-		{"ams2", "206.189.240.1", 0},
-		{"blr1", "143.110.180.2", 0},
-		{"fra1", "138.68.109.1", 0},
-		{"lon1", "209.97.176.1", 0},
-		{"nyc1", "192.241.251.1", 0},
-		{"sfo1", "198.199.113.1", 0},
-		{"sgp1", "209.97.160.1", 0},
-		{"tor1", "68.183.194.1", 0},
-	}
-
-	// default to NYC
-	closestRegion = "nyc1"
-
-	// get ping time to each region
-	// to see which is the closest
-	var lowestPingTime = math.MaxInt32
-	for _, region := range regionIPs {
-		pingTime, err := core.GetPingTime(region.ipAddress)
-		if err != nil {
-			return "", err
-		}
-		region.result = pingTime
-
-		// is this datacenter closer than others we've seen so far
-		if int(pingTime) < lowestPingTime {
-			closestRegion = region.name
-			lowestPingTime = int(pingTime)
-		}
-	}
-
-	return closestRegion, nil
+	return core.GetPingTimesForArray(regionIPs)
 }
 
 // GetVMInfo will get details of a VM

@@ -3,13 +3,10 @@ package vultr
 import (
 	"context"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/eezhee/eezhee/pkg/core"
-	"github.com/go-ping/ping"
 	"github.com/vultr/govultr"
 	"golang.org/x/crypto/ssh"
 )
@@ -29,32 +26,24 @@ type Plan struct {
 // TODO: more dynamic way would be to get list and sort by price
 // var planOrder []int = []int{201, 202, 203, 204, 205, 206, 207, 208}
 
-const maxPingTime = 2 * time.Second // assumes there will be atleast one region closer than this
-
-type regionPingTime struct {
-	id      string // region ID
-	address string // ip address or hostname (in region) that we can use for ping test
-	time    int    // ping time for given ip address (in msec)
-}
-
-var regionIPs = []regionPingTime{
-	{"3", "tx-us-ping.vultr.com", 0},
-	{"5", "lax-ca-us-ping.vultr.com", 0},
-	{"39", "fl-us-ping.vultr.com", 0},
-	{"12", "sjo-ca-us-ping.vultr.com", 0},
-	{"2", "il-us-ping.vultr.com", 0},
-	{"4", "wa-us-ping.vultr.com", 0},
-	{"1", "nj-us-ping.vultr.com", 0},
-	{"6", "ga-us-ping.vultr.com", 0},
-	{"22", "tor-ca-ping.vultr.com", 0},
-	{"24", "par-fr-ping.vultr.com", 0},
-	{"9", "fra-de-ping.vultr.com", 0},
-	{"7", "ams-nl-ping.vultr.com", 0},
-	{"8", "lon-gb-ping.vultr.com", 0},
-	{"40", "sgp-ping.vultr.com", 0},
-	{"34", "sel-kor-ping.vultr.com", 0},
-	{"25", "hnd-jp-ping.vultr.com", 0},
-	{"19", "syd-au-ping.vultr.com", 0},
+var regionIPs = []core.IPPingTime{
+	{ID: "3", Address: "tx-us-ping.vultr.com"},
+	{ID: "5", Address: "lax-ca-us-ping.vultr.com"},
+	{ID: "39", Address: "fl-us-ping.vultr.com"},
+	{ID: "12", Address: "sjo-ca-us-ping.vultr.com"},
+	{ID: "2", Address: "il-us-ping.vultr.com"},
+	{ID: "4", Address: "wa-us-ping.vultr.com"},
+	{ID: "1", Address: "nj-us-ping.vultr.com"},
+	{ID: "6", Address: "ga-us-ping.vultr.com"},
+	{ID: "22", Address: "tor-ca-ping.vultr.com"},
+	{ID: "24", Address: "par-fr-ping.vultr.com"},
+	{ID: "9", Address: "fra-de-ping.vultr.com"},
+	{ID: "7", Address: "ams-nl-ping.vultr.com"},
+	{ID: "8", Address: "lon-gb-ping.vultr.com"},
+	{ID: "40", Address: "sgp-ping.vultr.com"},
+	{ID: "34", Address: "sel-kor-ping.vultr.com"},
+	{ID: "25", Address: "hnd-jp-ping.vultr.com"},
+	{ID: "19", Address: "syd-au-ping.vultr.com"},
 }
 
 // Manager controls access to AWS
@@ -143,95 +132,9 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 	return keyID, nil
 }
 
-// TODO make more generic
-//      should be able to pass array of IPs/hostnames and get sorted array back
-//      not just for regions.  can be for hosts (or whatever)
-
-// getPingTime will do a ping test to the given host / ip address
-func getPingTime(pingTest regionPingTime, ch chan regionPingTime) {
-
-	pinger, err := ping.NewPinger(pingTest.address)
-	if err == nil {
-
-		// set ping parameters
-		pinger.Count = 3
-		pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
-
-		// do the ping test
-		err = pinger.Run() // blocks until finished
-		if err == nil {
-			// get results
-			stats := pinger.Statistics() // get send/receive/rtt stats
-
-			// save results
-			pingTime := stats.AvgRtt.Milliseconds()
-			pingTest.time = int(pingTime)
-		}
-	}
-
-	if err != nil {
-		// log the error
-		fmt.Println(err)
-	}
-
-	// pass results back to caller
-	// note: need to pass something back whether worked or not
-	// callers waits until gets all results
-	ch <- pingTest
-
-}
-
 // SelectClosestRegion will ping all regions and return the ID of the closest
-// TODO move this to pkg/core/vm.go
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-
-	// get ping time to each region
-	numRegions := len(regionIPs)
-
-	// use go routine to do each ping
-	// will return result using a channel
-	ch := make(chan regionPingTime, numRegions)
-
-	// set a timeout as we don't want to hang if
-	// don't get all ping results
-	f := func() {
-		close(ch)
-	}
-
-	// issue the pings
-	for _, region := range regionIPs {
-		go getPingTime(region, ch)
-	}
-
-	// start the timeout timer
-	// timeout should be longer than timeout on pings
-	timeout := time.AfterFunc(4*time.Second, f)
-	defer timeout.Stop()
-
-	// reading result until we have them all
-	numResults := 0
-	lowestPingTime := math.MaxInt32
-	for result := range ch {
-
-		numResults++
-
-		// keep track of fastest ping time
-		// ignore time of 0 (means ping failed)
-		if (result.time > 0) && (result.time < lowestPingTime) {
-			closestRegion = result.id
-			lowestPingTime = result.time
-		}
-		// fmt.Println(result.name, result.time)
-
-		// do we have all the results?
-		// NOTE: this method was unreliable and would sometimes hang
-		//       seems like some of the ping tests would not report back
-		// if numResults == numRegions {
-		// 	close(ch) // will break the loop
-		// }
-	}
-
-	return closestRegion, nil
+	return core.GetPingTimesForArray(regionIPs)
 }
 
 // GetVMInfo will get details of a VM
