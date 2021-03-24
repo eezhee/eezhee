@@ -24,9 +24,9 @@ type IPPingTime struct {
 }
 
 // getPingTime will do a ping test to the given host / ip address
-func getPingTime(pingTest IPPingTime, ch chan IPPingTime) {
+func getPingTime(pingDetails *IPPingTime, ch chan IPPingTime) {
 
-	pinger, err := ping.NewPinger(pingTest.Address)
+	pinger, err := ping.NewPinger(pingDetails.Address)
 	if err == nil {
 
 		// set ping parameters
@@ -41,7 +41,8 @@ func getPingTime(pingTest IPPingTime, ch chan IPPingTime) {
 
 			// save results
 			pingTime := stats.AvgRtt.Milliseconds()
-			pingTest.Time = int(pingTime)
+			pingDetails.Time = int(pingTime)
+			fmt.Println(pingDetails.ID, " ", pingDetails.Time, " seconds")
 		}
 	}
 
@@ -53,7 +54,7 @@ func getPingTime(pingTest IPPingTime, ch chan IPPingTime) {
 	// pass results back to caller
 	// note: need to pass something back whether worked or not
 	// callers waits until gets results from all ping tests
-	ch <- pingTest
+	ch <- *pingDetails
 }
 
 // GetPingTimesForArray will ping all ips/hosts and return the ID of the closest
@@ -72,13 +73,13 @@ func GetPingTimesForArray(ipAddressList []IPPingTime) (closestRegion string, err
 	}
 
 	// issue the pings
-	for _, ipDetails := range ipAddressList {
-		go getPingTime(ipDetails, ch)
+	for index := range ipAddressList {
+		go getPingTime(&ipAddressList[index], ch)
 	}
 
 	// start the timeout timer
 	// timeout should be longer than timeout on pings
-	timeout := time.AfterFunc(maxPingTime+1, f)
+	timeout := time.AfterFunc(maxPingTime+time.Second, f)
 	defer timeout.Stop()
 
 	// reading result until we have them all

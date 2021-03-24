@@ -65,7 +65,9 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-	return core.GetPingTimesForArray(regionIPs)
+	closestRegion, err = core.GetPingTimesForArray(regionIPs)
+	// note regionsIPs is now filled with ping times
+	return closestRegion, err
 }
 
 // GetVMInfo will get details of a VM
