@@ -3,7 +3,6 @@ package linode
 import (
 	"context"
 	"fmt"
-	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -14,10 +13,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type regionPingTimes struct {
-	name      string // region name
-	ipAddress string // ip address in region that we can use for ping tests
-	result    int64  // ping time for given ip address
+var regionIPs = []core.IPPingTime{
+	{ID: "ca-central", Address: "speedtest.toronto1.linode.com"},
+	{ID: "us-central", Address: "speedtest.dallas.linode.com"},
+	{ID: "us-west", Address: "speedtest.fremont.linode.com"},
+	{ID: "us-east", Address: "speedtest.newark.linode.com"},
+	{ID: "eu-central", Address: "speedtest.frankfurt.linode.com"},
+	{ID: "eu-west", Address: "speedtest.london.linode.com"},
+	{ID: "ap-south", Address: "speedtest.singapore.linode.com"},
+	{ID: "ap-southeast", Address: "speedtest.syd1.linode.com"},
+	{ID: "ap-west", Address: "speedtest.mumbai1.linode.com"},
+	{ID: "ap-northeast", Address: "speedtest.tokyo2.linode.com"},
 }
 
 // Manager handles interactions with DigitalOcean API
@@ -59,41 +65,9 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-
-	regionIPs := []regionPingTimes{
-		{"ca-central", "speedtest.toronto1.linode.com", 0},
-		{"us-central", "speedtest.dallas.linode.com", 0},
-		{"us-west", "speedtest.fremont.linode.com", 0},
-		{"us-east", "speedtest.newark.linode.com", 0},
-		{"eu-central", "speedtest.frankfurt.linode.com", 0},
-		{"eu-west", "speedtest.london.linode.com", 0},
-		{"ap-south", "speedtest.singapore.linode.com", 0},
-		{"ap-southeast", "speedtest.syd1.linode.com", 0},
-		{"ap-west", "speedtest.mumbai1.linode.com", 0},
-		{"ap-northeast", "speedtest.tokyo2.linode.com", 0},
-	}
-
-	// default to NYC
-	closestRegion = "us-east"
-
-	// get ping time to each region
-	// to see which is the closest
-	var lowestPingTime = math.MaxInt32
-	for _, region := range regionIPs {
-		pingTime, err := core.GetPingTime(region.ipAddress)
-		if err != nil {
-			return "", err
-		}
-		region.result = pingTime
-
-		// is this datacenter closer than others we've seen so far
-		if int(pingTime) < lowestPingTime {
-			closestRegion = region.name
-			lowestPingTime = int(pingTime)
-		}
-	}
-
-	return closestRegion, nil
+	closestRegion, err = core.GetPingTimesForArray(regionIPs)
+	// note regionsIPs is now filled with ping times
+	return closestRegion, err
 }
 
 // GetVMInfo will get details of a VM
