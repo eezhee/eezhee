@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"io/ioutil"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -39,6 +40,9 @@ func (s *SSHKey) LoadPublicKey(filename string) error {
 func (s *SSHKey) GetPublicKey() string {
 
 	original := string(ssh.MarshalAuthorizedKey(s.PublicKey))
+	//  marshal adds a '\n' which linod does not like, remove it
+	original = strings.TrimSuffix(original, "\n")
+
 	// log.Debug(original)
 
 	return original
