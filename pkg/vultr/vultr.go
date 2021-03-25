@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/vultr/govultr/v2"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/oauth2"
 )
 
 // Plan details about each VM plan
@@ -27,23 +28,23 @@ type Plan struct {
 // var planOrder []int = []int{201, 202, 203, 204, 205, 206, 207, 208}
 
 var regionIPs = []core.IPPingTime{
-	{ID: "3", Address: "tx-us-ping.vultr.com"},
-	{ID: "5", Address: "lax-ca-us-ping.vultr.com"},
-	{ID: "39", Address: "fl-us-ping.vultr.com"},
-	{ID: "12", Address: "sjo-ca-us-ping.vultr.com"},
-	{ID: "2", Address: "il-us-ping.vultr.com"},
-	{ID: "4", Address: "wa-us-ping.vultr.com"},
-	{ID: "1", Address: "nj-us-ping.vultr.com"},
-	{ID: "6", Address: "ga-us-ping.vultr.com"},
-	{ID: "22", Address: "tor-ca-ping.vultr.com"},
-	{ID: "24", Address: "par-fr-ping.vultr.com"},
-	{ID: "9", Address: "fra-de-ping.vultr.com"},
-	{ID: "7", Address: "ams-nl-ping.vultr.com"},
-	{ID: "8", Address: "lon-gb-ping.vultr.com"},
-	{ID: "40", Address: "sgp-ping.vultr.com"},
-	{ID: "34", Address: "sel-kor-ping.vultr.com"},
-	{ID: "25", Address: "hnd-jp-ping.vultr.com"},
-	{ID: "19", Address: "syd-au-ping.vultr.com"},
+	{ID: "dfw", Address: "tx-us-ping.vultr.com"},
+	{ID: "lax", Address: "lax-ca-us-ping.vultr.com"},
+	{ID: "mia", Address: "fl-us-ping.vultr.com"},
+	{ID: "sjc", Address: "sjo-ca-us-ping.vultr.com"},
+	{ID: "ord", Address: "il-us-ping.vultr.com"},
+	{ID: "sea", Address: "wa-us-ping.vultr.com"},
+	{ID: "ewr", Address: "nj-us-ping.vultr.com"},
+	{ID: "atl", Address: "ga-us-ping.vultr.com"},
+	{ID: "yto", Address: "tor-ca-ping.vultr.com"},
+	{ID: "cdg", Address: "par-fr-ping.vultr.com"},
+	{ID: "fra", Address: "fra-de-ping.vultr.com"},
+	{ID: "ams", Address: "ams-nl-ping.vultr.com"},
+	{ID: "lhr", Address: "lon-gb-ping.vultr.com"},
+	{ID: "sgp", Address: "sgp-ping.vultr.com"},
+	{ID: "icn", Address: "sel-kor-ping.vultr.com"},
+	{ID: "nrt", Address: "hnd-jp-ping.vultr.com"},
+	{ID: "syd", Address: "syd-au-ping.vultr.com"},
 }
 
 // Manager controls access to AWS
@@ -67,7 +68,11 @@ func NewManager(providerAPIToken string) (m *Manager) {
 	manager := new(Manager)
 	manager.APIToken = providerAPIToken
 
-	manager.api = govultr.NewClient(nil, manager.APIToken)
+	config := &oauth2.Config{}
+	ctx := context.Background()
+	ts := config.TokenSource(ctx, &oauth2.Token{AccessToken: providerAPIToken})
+
+	manager.api = govultr.NewClient(oauth2.NewClient(ctx, ts))
 
 	return manager
 }
@@ -96,7 +101,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err error) {
 
 	// get all keys that are on vutrl
-	keys, err := m.api.SSHKey.List(context.Background())
+	keys, _, err := m.api.SSHKey.List(context.Background(), nil)
 	if err != nil {
 		return "", err
 	}
@@ -107,7 +112,7 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 
 		// log.Debug(key.Name)
 
-		sshKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.Key))
+		sshKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.SSHKey))
 		if err != nil {
 			continue
 		}
@@ -115,18 +120,24 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 		// check fingerprint and see if we have a match
 		if fingerprint == desiredSSHKey.Fingerprint() {
 			haveKey = true
-			keyID = key.SSHKeyID
+			keyID = key.ID
 			break
 		}
 	}
 
 	// we need to add the key
 	if !haveKey {
-		key, err := m.api.SSHKey.Create(context.Background(), "athir-eezhee", desiredSSHKey.GetPublicKey())
+
+		newKey := &govultr.SSHKeyReq{
+			Name:   "athir-eezhee",
+			SSHKey: desiredSSHKey.GetPublicKey(),
+		}
+
+		key, err := m.api.SSHKey.Create(context.Background(), newKey)
 		if err != nil {
 			return "", err
 		}
-		keyID = key.SSHKeyID
+		keyID = key.ID
 	}
 
 	return keyID, nil
@@ -143,41 +154,41 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 
 	instanceID := strconv.Itoa(vmID)
-	server, err := m.api.Server.GetServer(context.Background(), instanceID)
+	server, err := m.api.Instance.Get(context.Background(), instanceID)
 	if err != nil {
 		return vmInfo, err
 	}
 
 	//Convert info to our format
-	vmInfo.ID, _ = strconv.Atoi(server.InstanceID)
+	vmInfo.ID, _ = strconv.Atoi(server.ID)
 	vmInfo.Name = server.Label
 	vmInfo.Region = core.RegionInfo{
-		Name: server.Location,
-		Slug: server.RegionID,
+		// Name: server.Region,
+		Slug: server.Region,
 	}
 	//TODO set RAM, Disk, VPSCpus, Cost (both in size and in vminfo)
 	// issue is these are not standard formats
 	vmInfo.Size = core.SizeInfo{
-		Slug: server.PlanID,
+		Slug: server.Plan,
 	}
-	imageID, _ := strconv.Atoi(server.OsID)
+	imageID, _ := strconv.Atoi(server.Os)
 	vmInfo.Image = core.ImageInfo{
 		ID:   imageID,
 		Name: server.Os,
 	}
-	vmInfo.CreatedAt = server.Created
+	vmInfo.CreatedAt = server.DateCreated
 	vmInfo.Tags = append(vmInfo.Tags, server.Tag)
 
 	// only status that needs to be standardized is final one that server is up
 	// at vultr that is "ok"
-	if strings.Compare(server.ServerState, "ok") == 0 {
+	if strings.Compare(server.ServerStatus, "ok") == 0 {
 		vmInfo.Status = "running"
 	} else {
 		if strings.Compare(server.Status, "pending") == 0 { // TODO: powerstatus = 'stopped' show that rather than 'locked'
 			// serverstatus will be 'none' so use status instead
 			vmInfo.Status = server.Status
 		} else {
-			vmInfo.Status = server.ServerState
+			vmInfo.Status = server.ServerStatus
 		}
 	}
 	// get public IP address
@@ -202,22 +213,24 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	}
 	keyIDs := []string{keyID}
 
-	regionID, _ := strconv.Atoi(region)
-	sizeInt, _ := strconv.Atoi(size)
-	imageID, _ := strconv.Atoi(image)
-	options := govultr.ServerOptions{
-		Label:     name,
-		SSHKeyIDs: keyIDs,
-		Tag:       "eezhee",
+	imageInt, _ := strconv.Atoi(size)
+	options := &govultr.InstanceCreateReq{
+		Region:  region,
+		Plan:    size,
+		OsID:    imageInt,
+		Label:   name,
+		SSHKeys: keyIDs,
+		Tag:     "eezhee",
 	}
-	server, err := m.api.Server.Create(context.Background(), regionID, sizeInt, imageID, &options)
+
+	server, err := m.api.Instance.Create(context.Background(), options)
 	if err != nil {
 		return vmInfo, err
 	}
-	log.Info("vm ", server.InstanceID, " created")
+	log.Info("vm ", server.ID, " created")
 
 	// transfer data to vmInfo
-	vmInfo.ID, err = strconv.Atoi(server.InstanceID)
+	vmInfo.ID, err = strconv.Atoi(server.ID)
 	if err != nil {
 		return vmInfo, err
 	}
@@ -228,7 +241,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 // ListVMs will return a list of all VMs created by eezhee
 func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 
-	instances, err := m.api.Server.List(context.Background())
+	instances, _, err := m.api.Instance.List(context.Background(), nil)
 	if err != nil {
 		return vmInfo, err
 	}
@@ -241,7 +254,7 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 			}
 		}
 
-		log.Debug(instance.InstanceID, " ", instance.Status, " ", instance.Location, " ", instance.MainIP)
+		log.Debug(instance.ID, " ", instance.Status, " ", instance.Region, " ", instance.MainIP)
 	}
 	return vmInfo, nil
 }
@@ -251,26 +264,26 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 
 	var vmInfo core.VMInfo
 
-	vmInfo.ID, _ = strconv.Atoi(instance.InstanceID)
+	vmInfo.ID, _ = strconv.Atoi(instance.ID)
 
 	vmInfo.Name = instance.Label
 
-	vmInfo.Memory, _ = strconv.Atoi(instance.RAM)
-	vmInfo.VCPUs, _ = strconv.Atoi(instance.VPSCpus)
+	vmInfo.Memory = instance.RAM
+	vmInfo.VCPUs = instance.VCPUCount
 	vmInfo.Disk = instance.Disk
 
 	vmInfo.Region = core.RegionInfo{Name: instance.Region}
 	vmInfo.Status = string(instance.Status)
 
-	vmInfo.CreatedAt = instance.Created.String()
+	vmInfo.CreatedAt = instance.DateCreated
 
 	vmInfo.Image = core.ImageInfo{
 		// ID: instance.Image,   	// int vs string
-		Name: instance.Image,
+		Name: instance.Os,
 	}
 
 	vmInfo.Size = core.SizeInfo{
-		Slug: instance.Type,
+		Slug: strconv.FormatInt(int64(instance.RAM), 10),
 	}
 	vmInfo.Networks = core.NetworkInfo{
 		V4Info: []core.V4NetworkInfo{},
@@ -278,16 +291,16 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 	}
 
 	v4NetworkInfo := core.V4NetworkInfo{
-		IPAddress: instance.IPv4[0].String(),
+		IPAddress: instance.MainIP,
 	}
 	vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
 
 	v6NetworkInfo := core.V6NetworkInfo{
-		IPAddress: instance.IPv6,
+		IPAddress: instance.V6MainIP,
 	}
 	vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
 
-	vmInfo.Tags = instance.Tags
+	vmInfo.Tags = []string{instance.Tag}
 
 	return vmInfo, nil
 }
@@ -299,7 +312,7 @@ func (m *Manager) DeleteVM(ID int) error {
 	//       need to wait until build completed first
 
 	instanceID := strconv.Itoa(ID)
-	err := m.api.Server.Delete(context.Background(), instanceID)
+	err := m.api.Instance.Delete(context.Background(), instanceID)
 	if err != nil {
 		return err
 	}
