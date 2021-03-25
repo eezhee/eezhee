@@ -88,12 +88,14 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		return vmInfo, err
 	}
 
+	booted := true
 	createOptions := linodego.InstanceCreateOptions{
 		Region:   region,
 		Type:     size,
 		Label:    name,
 		Image:    image,
 		RootPass: rootPassword,
+		Booted:   &booted,
 	}
 
 	createOptions.AuthorizedKeys = append(createOptions.AuthorizedKeys, sshKey.GetPublicKey())
