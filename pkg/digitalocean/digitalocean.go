@@ -187,7 +187,7 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error)
 
 	vmInfo.ID = strconv.Itoa(dropletInfo.ID)
 	vmInfo.Name = dropletInfo.Name
-	vmInfo.Memory = dropletInfo.Memory
+	vmInfo.Memory = dropletInfo.Memory / 1024
 	vmInfo.VCPUs = dropletInfo.Vcpus
 	vmInfo.Disk = dropletInfo.Disk
 	vmInfo.Region = core.RegionInfo{
@@ -215,6 +215,7 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error)
 	vmInfo.Size = core.SizeInfo{
 		Slug: dropletInfo.Size.Slug,
 	}
+	vmInfo.SizeSlug = dropletInfo.Size.Slug
 	vmInfo.Networks = core.NetworkInfo{
 		V4Info: []core.V4NetworkInfo{},
 		V6Info: []core.V6NetworkInfo{},

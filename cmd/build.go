@@ -17,6 +17,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const statusCheckDelay = 2 * time.Second // time between checks on status of VM
+const launchDelay = 10 * time.Second     // time from when provider says vm ready to us ssh'ing in
+
 func init() {
 	rootCmd.AddCommand(buildCmd)
 }
@@ -145,7 +148,7 @@ func buildCluster() error {
 		if err != nil {
 			return err
 		}
-		log.Info("deploying to ", deployConfig.Region)
+		log.Info("using ", deployConfig.Region)
 	}
 
 	// TODO - allow config to specify size/type
@@ -191,7 +194,7 @@ func buildCluster() error {
 	for strings.Compare(status, "running") != 0 {
 
 		// wait a bit
-		time.Sleep(2 * time.Second)
+		time.Sleep(statusCheckDelay)
 		vmInfo, err = vmManager.GetVMInfo(vmID)
 		if err != nil {
 			// TODO: vm has been created, really should delete (or should we add retry to getVMInfo?)
@@ -213,11 +216,6 @@ func buildCluster() error {
 		return err
 	}
 
-	// pause as ssh might not be ready
-	time.Sleep(2 * time.Second)
-
-	// log.Info("VM is ready")
-
 	// save current state
 	deployState.Cloud = deployConfig.Cloud
 	deployState.ID = vmInfo.ID
@@ -231,6 +229,9 @@ func buildCluster() error {
 	if err != nil {
 		return err
 	}
+
+	// pause as ssh might not be ready
+	time.Sleep(launchDelay)
 
 	// TODO: refactor this into another function
 
@@ -247,6 +248,7 @@ func buildCluster() error {
 	if err != nil {
 		return err
 	}
+	log.Info("saved cluster details to 'deploy-state.yaml'")
 
 	// TODO: what about installing ingress?
 
