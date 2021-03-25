@@ -151,16 +151,15 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 }
 
 // GetVMInfo will get details of a VM
-func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+func (m *Manager) GetVMInfo(vmID string) (vmInfo core.VMInfo, err error) {
 
-	instanceID := strconv.Itoa(vmID)
-	server, err := m.api.Instance.Get(context.Background(), instanceID)
+	server, err := m.api.Instance.Get(context.Background(), vmID)
 	if err != nil {
 		return vmInfo, err
 	}
 
 	//Convert info to our format
-	vmInfo.ID, _ = strconv.Atoi(server.ID)
+	vmInfo.ID = server.ID
 	vmInfo.Name = server.Label
 	vmInfo.Region = core.RegionInfo{
 		// Name: server.Region,
@@ -230,7 +229,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	log.Info("vm ", server.ID, " created")
 
 	// transfer data to vmInfo
-	vmInfo.ID, err = strconv.Atoi(server.ID)
+	vmInfo.ID = server.ID
 	if err != nil {
 		return vmInfo, err
 	}
@@ -264,7 +263,7 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 
 	var vmInfo core.VMInfo
 
-	vmInfo.ID, _ = strconv.Atoi(instance.ID)
+	vmInfo.ID = instance.ID
 
 	vmInfo.Name = instance.Label
 
@@ -272,19 +271,21 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 	vmInfo.VCPUs = instance.VCPUCount
 	vmInfo.Disk = instance.Disk
 
-	vmInfo.Region = core.RegionInfo{Name: instance.Region}
-	vmInfo.Status = string(instance.Status)
+	vmInfo.Region = core.RegionInfo{Slug: instance.Region}
+	vmInfo.Status = string(instance.ServerStatus)
 
 	vmInfo.CreatedAt = instance.DateCreated
 
 	vmInfo.Image = core.ImageInfo{
-		// ID: instance.Image,   	// int vs string
+		ID:   instance.OsID,
 		Name: instance.Os,
 	}
 
 	vmInfo.Size = core.SizeInfo{
-		Slug: strconv.FormatInt(int64(instance.RAM), 10),
+		Slug: instance.Plan,
 	}
+	vmInfo.SizeSlug = instance.Plan
+
 	vmInfo.Networks = core.NetworkInfo{
 		V4Info: []core.V4NetworkInfo{},
 		V6Info: []core.V6NetworkInfo{},
@@ -292,11 +293,15 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 
 	v4NetworkInfo := core.V4NetworkInfo{
 		IPAddress: instance.MainIP,
+		Gateway:   instance.GatewayV4,
+		Netmask:   instance.NetmaskV4,
 	}
 	vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
 
 	v6NetworkInfo := core.V6NetworkInfo{
 		IPAddress: instance.V6MainIP,
+		Gateway:   instance.V6Network,
+		Netmask:   instance.V6NetworkSize,
 	}
 	vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
 
@@ -306,13 +311,12 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 }
 
 // DeleteVM will delete a given VM
-func (m *Manager) DeleteVM(ID int) error {
+func (m *Manager) DeleteVM(ID string) error {
 
 	// NOTE: if current status is 'pending' then can't delete (yet)
 	//       need to wait until build completed first
 
-	instanceID := strconv.Itoa(ID)
-	err := m.api.Instance.Delete(context.Background(), instanceID)
+	err := m.api.Instance.Delete(context.Background(), ID)
 	if err != nil {
 		return err
 	}

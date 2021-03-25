@@ -9,8 +9,8 @@ import (
 type VMManager interface {
 	ListVMs() (vmInfo []VMInfo, err error)
 	CreateVM(name string, image string, size string, region string, sshKey SSHKey) (VMInfo, error)
-	GetVMInfo(vmID int) (vmInfo VMInfo, err error)
-	DeleteVM(ID int) error
+	GetVMInfo(vmID string) (vmInfo VMInfo, err error)
+	DeleteVM(ID string) error
 	// UploadSSHKey()
 	IsSSHKeyUploaded(sshKey SSHKey) (string, error)
 	SelectClosestRegion() (closestRegion string, err error)
@@ -96,7 +96,7 @@ type NetworkInfo struct {
 
 // VMInfo has all details about a given VM
 type VMInfo struct {
-	ID        int         `json:"id"`
+	ID        string      `json:"id"`
 	Name      string      `json:"name"`
 	Memory    int         `json:"memory"`
 	VCPUs     int         `json:"vcpus"`

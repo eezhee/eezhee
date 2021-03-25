@@ -129,7 +129,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 }
 
 // GetVMInfo will get details of a VM
-func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+func (m *Manager) GetVMInfo(vmID string) (vmInfo core.VMInfo, err error) {
 
 	return vmInfo, nil
 }
@@ -171,7 +171,7 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 }
 
 // DeleteVM will delete a given VM
-func (m *Manager) DeleteVM(ID int) error {
+func (m *Manager) DeleteVM(ID string) error {
 
 	return nil
 }

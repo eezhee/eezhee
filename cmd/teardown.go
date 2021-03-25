@@ -63,8 +63,8 @@ func teardownVM() error {
 
 	// get details of VM
 	ID := deployStateFile.ID
-	if ID == 0 {
-		msg := fmt.Sprintf("invalid VM ID: %d - Can not teardown VM\n", ID)
+	if len(ID) == 0 {
+		msg := fmt.Sprintf("invalid VM ID: %s - Can not teardown VM\n", ID)
 		return errors.New(msg)
 	}
 

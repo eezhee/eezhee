@@ -11,7 +11,7 @@ import (
 type DeployState struct {
 	v            *viper.Viper // used to read/write state
 	Cloud        string       // which cloud cluster was create in
-	ID           int          // ID of the VM cluster is on
+	ID           string       // ID of the VM cluster is on
 	Name         string       // name of the cluster
 	Region       string       // region cluster deployed to
 	Size         string       // VM size
@@ -61,7 +61,7 @@ func (s *DeployState) Load() error {
 	}
 
 	s.Cloud = s.v.GetString("cloud")
-	s.ID = s.v.GetInt("id")
+	s.ID = s.v.GetString("id")
 	s.Name = s.v.GetString("name")
 	s.Region = s.v.GetString("region")
 	s.Size = s.v.GetString("size")

@@ -3,6 +3,7 @@ package linode
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -71,7 +72,7 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 }
 
 // GetVMInfo will get details of a VM
-func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+func (m *Manager) GetVMInfo(vmID string) (vmInfo core.VMInfo, err error) {
 	return vmInfo, nil
 }
 
@@ -153,7 +154,7 @@ func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, erro
 
 	var vmInfo core.VMInfo
 
-	vmInfo.ID = instance.ID
+	vmInfo.ID = strconv.Itoa(instance.ID)
 	vmInfo.Name = instance.Label
 	vmInfo.Memory = instance.Specs.Memory
 	vmInfo.VCPUs = instance.Specs.VCPUs
@@ -192,9 +193,10 @@ func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, erro
 }
 
 // DeleteVM will delete a given VM
-func (m *Manager) DeleteVM(ID int) error {
+func (m *Manager) DeleteVM(ID string) error {
 
-	err := m.api.DeleteInstance(context.Background(), ID)
+	instanceID, _ := strconv.Atoi(ID)
+	err := m.api.DeleteInstance(context.Background(), instanceID)
 	if err != nil {
 		return err
 	}
