@@ -11,6 +11,7 @@ import (
 	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/linode"
 	"github.com/eezhee/eezhee/pkg/vultr"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,7 @@ var teardownCmd = &cobra.Command{
 
 		err := teardownVM()
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			os.Exit(1)
 		}
 	},
@@ -81,21 +82,21 @@ func teardownVM() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("k3s cluster (and VM) deleted")
+	log.Info("k3s cluster (and VM) deleted")
 
 	// remove the kubeconfig file
 	kubeConfigFile, _ := filepath.Abs("kubeconfig")
 	_ = os.Remove(kubeConfigFile)
-	// if err == nil {
-	// 	fmt.Println("removed kubeconfig for cluster")
-	// }
+	if err == nil {
+		log.Debug("removed kubeconfig for cluster")
+	}
 
 	// remove the deploy state file
 	err = deployStateFile.Delete()
 	if err != nil {
 		return err
 	}
-	// fmt.Println("deploy-state file deleted")
+	log.Debug("deploy-state file deleted")
 
 	return nil
 }

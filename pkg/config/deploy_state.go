@@ -1,9 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -53,9 +53,9 @@ func (s *DeployState) Load() error {
 	// try and read the file
 	if err := s.v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("nothing to teardown as no state file found")
+			log.Warn("nothing to teardown as no state file found")
 		} else {
-			fmt.Println("error reading state file")
+			log.Error("error reading state file")
 		}
 		return err
 	}
@@ -87,7 +87,7 @@ func (s *DeployState) Save() error {
 
 	err := s.v.WriteConfig()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return err
 	}
 
@@ -100,7 +100,7 @@ func (s *DeployState) Delete() error {
 	// remove deploy.yaml
 	err := os.Remove(s.v.ConfigFileUsed())
 	if err != nil {
-		fmt.Println("could not remove deploy-state.yaml file")
+		log.Warn("could not remove deploy-state.yaml file")
 		return err
 	}
 

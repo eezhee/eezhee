@@ -2,7 +2,6 @@ package linode
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/linode/linodego"
 	"github.com/sethvargo/go-password/password"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
@@ -36,7 +36,7 @@ type Manager struct {
 func NewManager(providerAPIToken string) (m *Manager) {
 
 	if len(providerAPIToken) == 0 {
-		fmt.Println("no linode api token set")
+		log.Error("no linode api token set")
 		return nil
 	}
 
@@ -142,7 +142,7 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 			}
 		}
 
-		fmt.Println(instance.ID, " ", instance.Label, " ", instance.IPv4)
+		log.Info(instance.ID, " ", instance.Label, " ", instance.IPv4)
 		// check tag.  did we create it
 		// if so, convert to generic format
 		// add to results
@@ -217,7 +217,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		if err != nil {
 // 			return vmInfo, err
 // 		}
-// 		fmt.Println(profile.AuthorizedKeys)
+// 		log.Debug(profile.AuthorizedKeys)
 // 	}
 
 // 	testImages := false
@@ -228,7 +228,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 			return vmInfo, nil
 // 		}
 // 		for _, image := range images {
-// 			fmt.Println("image:", image.Label, " ", image.ID, " ", image.Description)
+// 			log.Debug("image:", image.Label, " ", image.ID, " ", image.Description)
 // 		}
 
 // 		desiredImage := images[0].ID
@@ -236,7 +236,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		if err != nil {
 // 			return vmInfo, err
 // 		}
-// 		fmt.Println(image.Type)
+// 		log.Debug(image.Type)
 // 	}
 
 // 	testTypes := true
@@ -247,7 +247,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 			return vmInfo, err
 // 		}
 // 		for _, vmInfo := range vmTypes {
-// 			fmt.Println("type:", vmInfo.ID, " ", vmInfo.Label)
+// 			log.Debug("type:", vmInfo.ID, " ", vmInfo.Label)
 // 		}
 
 // 		desiredInstance := vmTypes[0].ID
@@ -255,7 +255,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		if err != nil {
 // 			return vmInfo, err
 // 		}
-// 		fmt.Println(instanceType.ID)
+// 		log.Debug(instanceType.ID)
 // 	}
 
 // 	testTags := false
@@ -271,7 +271,7 @@ func (m *Manager) DeleteVM(ID int) error {
 
 // 		// does our tag already exist?
 // 		for _, tag := range tags {
-// 			fmt.Println(tag.Label)
+// 			log.Debug(tag.Label)
 // 			if strings.Compare(tag.Label, "eezhee") == 0 {
 // 				tagExists = true
 // 			}
@@ -294,7 +294,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 			if err != nil {
 // 				return vmInfo, err
 // 			}
-// 			fmt.Println("tag:", newTag.Label)
+// 			log.Debug("tag:", newTag.Label)
 // 		}
 
 // 	}
@@ -303,9 +303,8 @@ func (m *Manager) DeleteVM(ID int) error {
 // 	if testRegions {
 // 		regions, _ := m.api.ListRegions(context.Background(), nil)
 // 		for _, region := range regions {
-// 			fmt.Println(region.Country, " ", region.ID)
+// 			log.Debug(region.Country, " ", region.ID)
 // 		}
-// 		fmt.Println("")
 
 // 	}
 
@@ -321,7 +320,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		// if err != nil {
 // 		// 	return vmInfo, err
 // 		// }
-// 		// fmt.Println(newDomain.ID)
+// 		// log.Debug(newDomain.ID)
 
 // 		// does the domain that we care about exist?
 // 		targetDomain := "testing-eezhee.com"
@@ -334,7 +333,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 				domainExists = true
 // 				break
 // 			}
-// 			fmt.Println(domain.ID, " ", domain.Domain)
+// 			log.Debug(domain.ID, " ", domain.Domain)
 // 		}
 // 		if !domainExists {
 // 			// since don't have domain hosted in linode, can't add any records
@@ -348,7 +347,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		if err != nil {
 // 			return vmInfo, err
 // 		}
-// 		fmt.Println(domainDetails.Domain)
+// 		log.Debug(domainDetails.Domain)
 
 // 		// records
 // 		domainRecordExists := false
@@ -367,7 +366,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 				break
 // 			}
 
-// 			fmt.Println(record.Name)
+// 			log.Debug(record.Name)
 // 		}
 
 // 		if domainRecordExists {
@@ -380,7 +379,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 			if err != nil {
 // 				return vmInfo, nil
 // 			}
-// 			fmt.Println(updatedRecord.Target)
+// 			log.Debug(updatedRecord.Target)
 // 		} else {
 // 			// create the record
 // 			recCreateOpts := linodego.DomainRecordCreateOptions{
@@ -394,7 +393,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 			if err != nil {
 // 				return vmInfo, err
 // 			}
-// 			fmt.Println(newRecord.ID)
+// 			log.Debug(newRecord.ID)
 // 		}
 
 // 		// err = m.api.DeleteDomainRecord(context.Background(), domainDetails.ID, domainDetails.ID)
@@ -424,7 +423,7 @@ func (m *Manager) DeleteVM(ID int) error {
 
 // 			// get SSHKey, get fingerprint of key and see if matches id_rsa.pub otherwise create it
 // 			// fingerprint := key.SSHKey
-// 			fmt.Println(key.ID, " ", key.SSHKey)
+// 			log.Debug(key.ID, " ", key.SSHKey)
 // 		}
 
 // 		sshOptions := linodego.SSHKeyCreateOptions{
@@ -435,7 +434,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		if err != nil {
 // 			return vmInfo, err
 // 		}
-// 		fmt.Println(newKey)
+// 		log.Debug(newKey)
 
 // 	}
 
@@ -446,7 +445,7 @@ func (m *Manager) DeleteVM(ID int) error {
 // 			return vmInfo, err
 // 		}
 // 		for _, instance := range instances {
-// 			fmt.Println(instance.ID, " ", instance.Label, " ", instance.IPv4)
+// 			log.Debug(instance.ID, " ", instance.Label, " ", instance.IPv4)
 // 		}
 
 // 		// generate a strong root password.  we will through this away
@@ -470,8 +469,8 @@ func (m *Manager) DeleteVM(ID int) error {
 // 		if err != nil {
 // 			return vmInfo, err
 // 		}
-// 		fmt.Println(newInstance.ID)
-// 		fmt.Println(newInstance.Status)
+// 		log.Debug(newInstance.ID)
+// 		log.Debug(newInstance.Status)
 
 // 		// see if vm ready
 // 		status := newInstance.Status

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/k3s"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,7 @@ var versionsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := getK3sVersions()
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			os.Exit(1)
 		}
 	},
@@ -45,7 +46,7 @@ func getK3sVersions() error {
 
 		channelInfo, err := k3sManager.Releases.GetChannel(channel)
 		if err != nil {
-			fmt.Println("invalid channel name")
+			log.Error("invalid channel name")
 		}
 		err = releaseInfo.Parse(channelInfo.Latest)
 		if err != nil {
@@ -74,7 +75,7 @@ func getK3sVersions() error {
 
 		releases, err := k3sManager.Releases.GetReleases(channel)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			continue
 		}
 

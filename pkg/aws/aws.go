@@ -1,13 +1,13 @@
 package aws
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/eezhee/eezhee/pkg/core"
+	log "github.com/sirupsen/logrus"
 )
 
 // Manager controls access to AWS
@@ -23,7 +23,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 	// otherwise, we can create it when user enters details
 
 	if len(providerAPIToken) == 0 {
-		fmt.Println("no aws api token set")
+		log.Error("no aws api token set")
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 	// func (c *EC2) CreateKeyPair(input *CreateKeyPairInput) (*CreateKeyPairOutput, error)
 	foundKeyPair := false
 	for _, keyPair := range dkpOutput.KeyPairs {
-		fmt.Println(keyPair)
+		log.Debug(keyPair)
 		keyID = *keyPair.KeyPairId
 	}
 
@@ -78,7 +78,7 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 		return keyID, err
 	}
 	keyID = *keyPair.KeyPairId
-	fmt.Println(keyPair.KeyFingerprint)
+	log.Debug(keyPair.KeyFingerprint)
 
 	return keyID, nil
 }
@@ -155,9 +155,9 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 		MinCount:     aws.Int64(1),
 		MaxCount:     aws.Int64(1),
 	})
-	fmt.Println(runResult)
+	log.Debug(runResult)
 	if err != nil {
-		fmt.Println("Could not create instance", err)
+		log.Error("Could not create instance", err)
 		return vmInfo, err
 	}
 

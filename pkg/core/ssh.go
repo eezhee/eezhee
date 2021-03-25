@@ -25,7 +25,7 @@ func (s *SSHKey) LoadPublicKey(filename string) error {
 		return err
 	}
 	// publicKeyStr := string(data)
-	// fmt.Println(publicKeyStr)
+	// log.Debug(publicKeyStr)
 
 	s.PublicKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(data))
 	if err != nil {
@@ -39,7 +39,7 @@ func (s *SSHKey) LoadPublicKey(filename string) error {
 func (s *SSHKey) GetPublicKey() string {
 
 	original := string(ssh.MarshalAuthorizedKey(s.PublicKey))
-	// fmt.Println(original)
+	// log.Debug(original)
 
 	return original
 }
@@ -48,7 +48,7 @@ func (s *SSHKey) GetPublicKey() string {
 func (s *SSHKey) Fingerprint() string {
 
 	fingerprint := ssh.FingerprintLegacyMD5(s.PublicKey)
-	// fmt.Println(fingerprint)
+	// log.Debug(fingerprint)
 
 	return fingerprint
 }

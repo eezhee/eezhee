@@ -6,11 +6,12 @@ package github
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Commit has basic commit info: url and sha
@@ -166,7 +167,7 @@ func GetVersionUsingREST() []string {
 			return nil
 		}
 
-		fmt.Println(len(releases))
+		log.Debug(len(releases))
 		for _, release := range releases {
 			tagName := release.TagName
 			// releaseName := release.Name  		// older releases have this blank
@@ -184,7 +185,7 @@ func GetVersionUsingREST() []string {
 
 				// } else {
 				// ignore non-final releases
-				// fmt.Println("ignoring", releaseParts[0], releaseParts[1])
+				// log.Debug("ignoring", releaseParts[0], releaseParts[1])
 			}
 		}
 
@@ -199,7 +200,7 @@ func GetVersionUsingREST() []string {
 			linkType := strings.TrimSpace(linkFields[1])
 
 			if strings.Compare(linkType, "rel=\"next\"") == 0 {
-				fmt.Println(link)
+				log.Debug(link)
 				apiURL = strings.Trim(link, "<>")
 			}
 		}
@@ -255,7 +256,8 @@ func GetVersionUsingREST() []string {
 // 	client := &http.Client{Timeout: time.Second * 10}
 // 	response, err := client.Do(request)
 // 	if err != nil {
-// 		fmt.Printf("The HTTP request failed with error %s\n", err)
+// 		msg := fmt.Sprintf("The HTTP request failed with error %s\n", err)
+// 		log.Error(msg)
 // 	}
 // 	defer response.Body.Close()
 // 	data, _ := ioutil.ReadAll(response.Body)
@@ -279,7 +281,7 @@ func makeRepoReleasesRequest(apiURL string) (data []byte, headers http.Header, e
 	client := &http.Client{Timeout: time.Second * 10}
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
+		log.Error("The HTTP request failed with error %s\n", err)
 		return data, headers, err
 	}
 	defer response.Body.Close()

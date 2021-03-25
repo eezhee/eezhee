@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -16,10 +15,10 @@ import (
 	"github.com/eezhee/eezhee/pkg/k3s"
 	"github.com/eezhee/eezhee/pkg/linode"
 	"github.com/eezhee/eezhee/pkg/vultr"
-	"golang.org/x/crypto/ssh"
-
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh"
 )
 
 func init() {
@@ -33,7 +32,7 @@ var buildCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := buildCluster()
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			os.Exit(1)
 		}
 	},
@@ -108,7 +107,7 @@ func buildCluster() error {
 	default:
 		return errors.New("no or invalid cloud specified")
 	}
-	fmt.Println("deplying to", deployConfig.Cloud)
+	log.Info("deplying to", deployConfig.Cloud)
 
 	// has a release of k3s been specified?
 	// if not, use latest stable release
@@ -168,12 +167,12 @@ func buildCluster() error {
 	// TODO: need to valide if it a valid region for given cloud
 	// set rest of details for new VM
 	if len(deployConfig.Region) == 0 {
-		fmt.Println("selecting closest region")
+		log.Info("selecting closest region")
 		deployConfig.Region, err = vmManager.SelectClosestRegion()
 		if err != nil {
 			return err
 		}
-		fmt.Println(deployConfig.Region, "is closest")
+		log.Info(deployConfig.Region, "is closest")
 	}
 
 	// TODO - allow config to specify size/type
@@ -198,7 +197,7 @@ func buildCluster() error {
 	}
 
 	// time to create the VM
-	fmt.Println("creating a VM")
+	log.Info("creating a VM")
 	vmInfo, err := vmManager.CreateVM(
 		deployConfig.Name, imageName, deployConfig.Size,
 		deployConfig.Region, sshKey,
@@ -229,7 +228,7 @@ func buildCluster() error {
 
 		// print status if it has changed since last time
 		if strings.Compare(lastStatus, status) != 0 {
-			fmt.Println(status)
+			log.Info(status)
 			lastStatus = status
 		}
 	}
@@ -244,7 +243,7 @@ func buildCluster() error {
 	// pause as ssh might not be ready
 	time.Sleep(2 * time.Second)
 
-	fmt.Println("VM is ready")
+	log.Info("VM is ready")
 
 	// save current state
 	deployState.Cloud = deployConfig.Cloud
@@ -264,7 +263,7 @@ func buildCluster() error {
 
 	// install k3s on the VM
 	k3sVersion := deployConfig.K3sVersion
-	fmt.Println("installing k3s release", k3sVersion)
+	log.Info("installing k3s release", k3sVersion)
 	k3sManager.Install(vmPublicIP, k3sVersion, deployConfig.Name)
 
 	// done, cluster up and running
@@ -291,7 +290,7 @@ func buildClusterName() (string, error) {
 	appName, _ := getCurrentDir()
 	branchName, err := getGitBranchName()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 	if len(branchName) > 0 {
@@ -344,23 +343,23 @@ func LoadSSHPublicKey() {
 		return
 	}
 	publicKey := string(data)
-	fmt.Println(publicKey)
+	log.Debug(publicKey)
 
 	pk, _, _, _, err := ssh.ParseAuthorizedKey([]byte(data))
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(pk)
+	log.Debug(pk)
 	original := string(ssh.MarshalAuthorizedKey(pk))
-	fmt.Println(original)
+	log.Debug(original)
 
 	if strings.Compare(publicKey, original) == 0 {
 		// can't do this as publicKey has email address at end of string
-		fmt.Println("can go back and forth")
+		log.Error("can go back and forth")
 	}
-	fmt.Println(pk.Type())
+	log.Debug(pk.Type())
 
 	fingerprint := ssh.FingerprintLegacyMD5(pk)
-	fmt.Println(fingerprint)
+	log.Debug(fingerprint)
 
 }

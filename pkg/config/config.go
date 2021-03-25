@@ -5,6 +5,7 @@ import (
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -30,14 +31,14 @@ func NewAppConfig() *AppConfig {
 	// make sure directory exists
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
-		fmt.Println("could not create directory ~/.eezhee for config file")
+		log.Error("could not create directory ~/.eezhee for config file")
 		return nil
 	}
 
 	// make sure file can be read or if no file, new file created
 	file, err := os.OpenFile(filename, os.O_CREATE, 0755)
 	if err != nil {
-		fmt.Println("could not initalize config file in directory ~/.eezhee")
+		log.Error("could not initalize config file in directory ~/.eezhee")
 		return nil
 	}
 	file.Close()
@@ -65,7 +66,7 @@ func (a *AppConfig) FileExists() bool {
 func (a *AppConfig) Load() error {
 
 	if err := a.v.ReadInConfig(); err != nil {
-		fmt.Println("could not read eezhee config file: ", err)
+		log.Error("could not read eezhee config file: ", err)
 		return err
 	}
 
@@ -95,7 +96,7 @@ func (a *AppConfig) Save() error {
 
 	err := a.v.WriteConfig()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return err
 	}
 
@@ -108,8 +109,8 @@ func (a *AppConfig) Delete() error {
 	// remove deploy.yaml
 	err := os.Remove(a.v.ConfigFileUsed())
 	if err != nil {
-
-		fmt.Printf("could not remove %s file\n", a.v.ConfigFileUsed())
+		msg := fmt.Sprintf("could not remove %s file\n", a.v.ConfigFileUsed())
+		log.Error(msg)
 		return err
 	}
 

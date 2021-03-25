@@ -6,6 +6,7 @@ import (
 
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/digitalocean"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +37,7 @@ func listVMs() bool {
 	// get all VMs in our account
 	vmInfo, err := manager.ListVMs()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -35,11 +36,11 @@ func NewManager() *Manager {
 
 	err := m.Releases.LoadChannels()
 	if err != nil {
-		fmt.Println("error: could not load list of k3s channels")
+		log.Error("error: could not load list of k3s channels")
 	}
 	err = m.Releases.LoadReleases()
 	if err != nil {
-		fmt.Println("error: could not load list of k3s releases")
+		log.Error("could not load list of k3s releases")
 	}
 
 	return m
@@ -63,7 +64,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 
 	// build install command
 	installK3scommand := fmt.Sprintf("curl -sLS https://get.k3s.io | INSTALL_K3S_VERSION=%s sh -\n", k3sVersion)
-	// fmt.Println(installK3scommand)
+	// log.Debug(installK3scommand)
 
 	// get the private sshkey
 	// TODO: should support ssh agent & passphrases
@@ -73,7 +74,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 
 	signer, err := getSSHKey(sshPrivateKeyFile, passphrase)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 
@@ -88,28 +89,28 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 	address := fmt.Sprintf("%s:%d", ipAddress, sshPort)
 	conn, err := ssh.Dial("tcp", address, config)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 
 	// install k3s on the VM
 	output, err := runCommand(conn, installK3scommand)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(output)
+		log.Error(err)
+		log.Debug(output)
 		return false
 	}
-	fmt.Println("k3s installed on VM")
+	log.Info("k3s installed on VM")
 
 	// get kubectl config
 	getK3sConfigCommand := "cat /etc/rancher/k3s/k3s.yaml\n"
 	output, err = runCommand(conn, getK3sConfigCommand)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(string(output))
+		log.Error(err)
+		log.Debug(string(output))
 		return false
 	}
-	// fmt.Println(string(output))
+	// log.Debug(string(output))
 
 	// need to update kubeconfig so works outside the VM
 	// IP address needs to be set to external IP
@@ -128,12 +129,12 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 	absPath, _ := filepath.Abs("kubeconfig")
 	err = ioutil.WriteFile(absPath, []byte(kubectlConfig), 0600)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 
-	fmt.Println("cluster is ready")
-	fmt.Println("you can access using `kubectl --kubeconfig ./kubeconfig get pods`")
+	log.Info("cluster is ready")
+	log.Info("you can access using `kubectl --kubeconfig ./kubeconfig get pods`")
 
 	return true
 }
@@ -142,7 +143,7 @@ func runCommand(conn *ssh.Client, command string) (outputStr string, err error) 
 
 	sess, err := conn.NewSession()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 	defer sess.Close()
@@ -150,11 +151,11 @@ func runCommand(conn *ssh.Client, command string) (outputStr string, err error) 
 	output, err := sess.CombinedOutput(command)
 	outputStr = string(output)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(outputStr)
+		log.Error(err)
+		log.Debug(outputStr)
 		return outputStr, err
 	}
-	// fmt.Println(outputStr)
+	// log.Debug(outputStr)
 
 	return outputStr, nil
 }

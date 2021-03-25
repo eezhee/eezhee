@@ -3,12 +3,12 @@ package digitalocean
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/eezhee/eezhee/pkg/core"
+	log "github.com/sirupsen/logrus"
 )
 
 // ip addresses to use to find closest region
@@ -47,7 +47,7 @@ type Manager struct {
 func NewManager(providerAPIToken string) (m *Manager) {
 
 	if len(providerAPIToken) == 0 {
-		fmt.Println("no digitalocean api token set")
+		log.Error("no digitalocean api token set")
 		return nil
 	}
 
@@ -94,7 +94,7 @@ func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
 	ctx := context.TODO()
 	droplet, _, err := m.api.Droplets.Get(ctx, vmID)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return vmInfo, err
 	}
 

@@ -2,11 +2,11 @@ package vultr
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/core"
+	log "github.com/sirupsen/logrus"
 	"github.com/vultr/govultr"
 	"golang.org/x/crypto/ssh"
 )
@@ -60,7 +60,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 	// otherwise, we can create it when user enters details
 
 	if len(providerAPIToken) == 0 {
-		fmt.Println("no aws api token set")
+		log.Error("no vultr api token set")
 		return nil
 	}
 
@@ -82,7 +82,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 // 	}
 
 // 	for _, plan := range plans {
-// 		fmt.Println(plan.Name)
+// 		log.Debug(plan.Name)
 // 		// plan 201 is $5, name: "1024 MB RAM,25 GB SSD,1.00 TB BW"
 // 	}
 
@@ -105,7 +105,7 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 	haveKey := false
 	for _, key := range keys {
 
-		// fmt.Println(key.Name)
+		// log.Debug(key.Name)
 
 		sshKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.Key))
 		if err != nil {
@@ -214,7 +214,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	if err != nil {
 		return vmInfo, err
 	}
-	fmt.Println("vm", server.InstanceID, "created")
+	log.Info("vm", server.InstanceID, "created")
 
 	// transfer data to vmInfo
 	vmInfo.ID, err = strconv.Atoi(server.InstanceID)
@@ -233,7 +233,7 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 		return vmInfo, err
 	}
 	for _, server := range servers {
-		fmt.Println(server.InstanceID, server.Status, server.Location, server.MainIP)
+		log.Info(server.InstanceID, server.Status, server.Location, server.MainIP)
 	}
 	return vmInfo, nil
 }
