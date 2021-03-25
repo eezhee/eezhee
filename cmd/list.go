@@ -43,7 +43,10 @@ func listVMs() bool {
 	// is there a deploy state file
 	deployState := config.NewDeployState()
 	if deployState.FileExists() {
-		deployState.Load()
+		err = deployState.Load()
+		if err != nil {
+			return false
+		}
 		cloud = deployState.Cloud
 	}
 

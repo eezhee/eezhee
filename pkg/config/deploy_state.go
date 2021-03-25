@@ -55,7 +55,7 @@ func (s *DeployState) Load() error {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			log.Warn("nothing to teardown as no state file found")
 		} else {
-			log.Error("error reading state file")
+			log.Error("error reading state file: ", err)
 		}
 		return err
 	}

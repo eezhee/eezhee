@@ -281,7 +281,7 @@ func makeRepoReleasesRequest(apiURL string) (data []byte, headers http.Header, e
 	client := &http.Client{Timeout: time.Second * 10}
 	response, err := client.Do(request)
 	if err != nil {
-		log.Error("The HTTP request failed with error %s\n", err)
+		log.Error("The HTTP request failed with error", err)
 		return data, headers, err
 	}
 	defer response.Body.Close()
