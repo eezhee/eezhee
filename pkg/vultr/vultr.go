@@ -212,14 +212,15 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	}
 	keyIDs := []string{keyID}
 
-	imageInt, _ := strconv.Atoi(size)
+	imageInt, _ := strconv.Atoi(image)
 	options := &govultr.InstanceCreateReq{
-		Region:  region,
-		Plan:    size,
-		OsID:    imageInt,
-		Label:   name,
-		SSHKeys: keyIDs,
-		Tag:     "eezhee",
+		Region:     region,
+		Plan:       size,
+		OsID:       imageInt,
+		Label:      name,
+		SSHKeys:    keyIDs,
+		EnableIPv6: govultr.BoolToBoolPtr(true),
+		Tag:        "eezhee",
 	}
 
 	server, err := m.api.Instance.Create(context.Background(), options)

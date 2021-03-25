@@ -145,7 +145,7 @@ func buildCluster() error {
 		if err != nil {
 			return err
 		}
-		log.Info("region ", deployConfig.Region, " is closest")
+		log.Info("deploying to ", deployConfig.Region)
 	}
 
 	// TODO - allow config to specify size/type
@@ -164,7 +164,7 @@ func buildCluster() error {
 		imageName = "linode/ubuntu20.04"
 	case "vultr":
 		if len(deployConfig.Size) == 0 {
-			deployConfig.Size = "201" // $5/month
+			deployConfig.Size = "vc2-1c-1gb" // $5/month
 		}
 		imageName = "387" // ubuntu 20.04
 	}
@@ -216,7 +216,7 @@ func buildCluster() error {
 	// pause as ssh might not be ready
 	time.Sleep(2 * time.Second)
 
-	log.Info("VM is ready")
+	// log.Info("VM is ready")
 
 	// save current state
 	deployState.Cloud = deployConfig.Cloud
