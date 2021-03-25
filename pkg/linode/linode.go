@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/linode/linodego"
@@ -73,6 +72,15 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 
 // GetVMInfo will get details of a VM
 func (m *Manager) GetVMInfo(vmID string) (vmInfo core.VMInfo, err error) {
+
+	instanceID, _ := strconv.Atoi(vmID)
+	instanceInfo, err := m.api.GetInstance(context.Background(), instanceID)
+	if err != nil {
+		return vmInfo, err
+	}
+
+	vmInfo, _ = convertVMInfoToGenericFormat(*instanceInfo)
+
 	return vmInfo, nil
 }
 
@@ -106,21 +114,20 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	}
 
 	// see if vm ready
-	status := newInstance.Status
-	for status != linodego.InstanceRunning {
-		// wait a bit
-		time.Sleep(2 * time.Second)
+	// status := newInstance.Status
+	// for status != linodego.InstanceRunning {
+	// 	// wait a bit
+	// 	time.Sleep(2 * time.Second)
 
-		instanceInfo, err := m.api.GetInstance(context.Background(), newInstance.ID)
-		if err != nil {
-			return vmInfo, err
-		}
+	// 	instanceInfo, err := m.api.GetInstance(context.Background(), newInstance.ID)
+	// 	if err != nil {
+	// 		return vmInfo, err
+	// 	}
 
-		status = instanceInfo.Status
+	// 	status = instanceInfo.Status
 
-	}
+	// }
 
-	// TODO - instanceInfo has the latest info - new Instance is stale
 	vmInfo, _ = convertVMInfoToGenericFormat(*newInstance)
 
 	return vmInfo, nil
@@ -158,10 +165,10 @@ func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, erro
 
 	vmInfo.ID = strconv.Itoa(instance.ID)
 	vmInfo.Name = instance.Label
-	vmInfo.Memory = instance.Specs.Memory
+	vmInfo.Memory = instance.Specs.Memory / 1024
 	vmInfo.VCPUs = instance.Specs.VCPUs
-	vmInfo.Disk = instance.Specs.Disk
-	vmInfo.Region = core.RegionInfo{Name: instance.Region}
+	vmInfo.Disk = instance.Specs.Disk / 1024
+	vmInfo.Region = core.RegionInfo{Slug: instance.Region}
 	vmInfo.Status = string(instance.Status)
 
 	vmInfo.CreatedAt = instance.Created.String()
@@ -174,6 +181,7 @@ func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, erro
 	vmInfo.Size = core.SizeInfo{
 		Slug: instance.Type,
 	}
+	vmInfo.SizeSlug = instance.Type
 	vmInfo.Networks = core.NetworkInfo{
 		V4Info: []core.V4NetworkInfo{},
 		V6Info: []core.V6NetworkInfo{},
@@ -181,6 +189,7 @@ func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, erro
 
 	v4NetworkInfo := core.V4NetworkInfo{
 		IPAddress: instance.IPv4[0].String(),
+		Type:      "public",
 	}
 	vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
 

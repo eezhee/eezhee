@@ -20,6 +20,9 @@ const (
 	apiTimeout          = 10 * time.Second
 )
 
+const maxRetries = 6               // number of times to try ssh'ing into the VM
+const retryDelay = 5 * time.Second // time between retries
+
 // use cases:
 //  	build latest version of k3s
 //		build specific version of k3s
@@ -78,7 +81,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 		return false
 	}
 
-	// connect to the server
+	// setup ssh details
 	config := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
@@ -87,9 +90,27 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	address := fmt.Sprintf("%s:%d", ipAddress, sshPort)
-	conn, err := ssh.Dial("tcp", address, config)
+
+	// ssh into the server (& retry if can't)
+	numRetries := 0
+	conn := &ssh.Client{}
+	for numRetries < maxRetries {
+
+		// try and ssh into vm
+		conn, err = ssh.Dial("tcp", address, config)
+		if err == nil {
+			// able to ssh into vm
+			break
+		}
+
+		log.Debug(err)
+
+		// wait a few seconds
+		time.Sleep(retryDelay)
+		numRetries += 1
+	}
+
 	if err != nil {
-		log.Error(err)
 		return false
 	}
 
@@ -133,7 +154,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 		return false
 	}
 
-	log.Info("cluster is ready")
+	log.Info("kubernetes is initializing")
 	log.Info("you can access using `kubectl --kubeconfig ./kubeconfig get pods`")
 
 	return true
