@@ -7,7 +7,7 @@ import (
 
 	"github.com/eezhee/eezhee/pkg/core"
 	log "github.com/sirupsen/logrus"
-	"github.com/vultr/govultr"
+	"github.com/vultr/govultr/v2"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -214,7 +214,7 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 	if err != nil {
 		return vmInfo, err
 	}
-	log.Info("vm", server.InstanceID, "created")
+	log.Info("vm ", server.InstanceID, " created")
 
 	// transfer data to vmInfo
 	vmInfo.ID, err = strconv.Atoi(server.InstanceID)
@@ -228,13 +228,67 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 // ListVMs will return a list of all VMs created by eezhee
 func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 
-	servers, err := m.api.Server.List(context.Background())
+	instances, err := m.api.Server.List(context.Background())
 	if err != nil {
 		return vmInfo, err
 	}
-	for _, server := range servers {
-		log.Info(server.InstanceID, server.Status, server.Location, server.MainIP)
+	for _, instance := range instances {
+		if len(instance.Tag) > 0 {
+			if strings.Compare(instance.Tag, "eezhee") == 0 {
+				// we created this VM
+				info, _ := convertVMInfoToGenericFormat(instance)
+				vmInfo = append(vmInfo, info)
+			}
+		}
+
+		log.Debug(instance.InstanceID, " ", instance.Status, " ", instance.Location, " ", instance.MainIP)
 	}
+	return vmInfo, nil
+}
+
+// convertVMInfoToGenericFormat cloud vendor info into our generic format
+func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error) {
+
+	var vmInfo core.VMInfo
+
+	vmInfo.ID, _ = strconv.Atoi(instance.InstanceID)
+
+	vmInfo.Name = instance.Label
+
+	vmInfo.Memory, _ = strconv.Atoi(instance.RAM)
+	vmInfo.VCPUs, _ = strconv.Atoi(instance.VPSCpus)
+	vmInfo.Disk = instance.Disk
+
+	vmInfo.Region = core.RegionInfo{Name: instance.Region}
+	vmInfo.Status = string(instance.Status)
+
+	vmInfo.CreatedAt = instance.Created.String()
+
+	vmInfo.Image = core.ImageInfo{
+		// ID: instance.Image,   	// int vs string
+		Name: instance.Image,
+	}
+
+	vmInfo.Size = core.SizeInfo{
+		Slug: instance.Type,
+	}
+	vmInfo.Networks = core.NetworkInfo{
+		V4Info: []core.V4NetworkInfo{},
+		V6Info: []core.V6NetworkInfo{},
+	}
+
+	v4NetworkInfo := core.V4NetworkInfo{
+		IPAddress: instance.IPv4[0].String(),
+	}
+	vmInfo.Networks.V4Info = append(vmInfo.Networks.V4Info, v4NetworkInfo)
+
+	v6NetworkInfo := core.V6NetworkInfo{
+		IPAddress: instance.IPv6,
+	}
+	vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
+
+	vmInfo.Tags = instance.Tags
+
 	return vmInfo, nil
 }
 

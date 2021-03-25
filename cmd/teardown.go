@@ -7,10 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/eezhee/eezhee/pkg/config"
-	"github.com/eezhee/eezhee/pkg/core"
-	"github.com/eezhee/eezhee/pkg/digitalocean"
-	"github.com/eezhee/eezhee/pkg/linode"
-	"github.com/eezhee/eezhee/pkg/vultr"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -57,17 +53,12 @@ func teardownVM() error {
 
 	// see which cloud cluster created on
 	cloud := deployStateFile.Cloud
-	var manager core.VMManager
 
-	switch cloud {
-	case "digitalocean":
-		manager = digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
-	case "linode":
-		manager = linode.NewManager(appConfig.LinodeAPIKey)
-	case "vultr":
-		manager = vultr.NewManager(appConfig.VultrAPIKey)
-	default:
-		return errors.New("state file reference cloud we don't support: ")
+	// create a manager for desired cloud
+	vmManager, err := GetManager(appConfig, cloud)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	// get details of VM
@@ -78,7 +69,7 @@ func teardownVM() error {
 	}
 
 	// ready to delete the cluster
-	err = manager.DeleteVM(ID)
+	err = vmManager.DeleteVM(ID)
 	if err != nil {
 		return err
 	}

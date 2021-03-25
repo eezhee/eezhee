@@ -8,13 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eezhee/eezhee/pkg/aws"
 	"github.com/eezhee/eezhee/pkg/config"
 	"github.com/eezhee/eezhee/pkg/core"
-	"github.com/eezhee/eezhee/pkg/digitalocean"
 	"github.com/eezhee/eezhee/pkg/k3s"
-	"github.com/eezhee/eezhee/pkg/linode"
-	"github.com/eezhee/eezhee/pkg/vultr"
 	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -107,7 +103,7 @@ func buildCluster() error {
 	default:
 		return errors.New("no or invalid cloud specified")
 	}
-	log.Info("deplying to", deployConfig.Cloud)
+	log.Info("deploying to ", deployConfig.Cloud)
 
 	// has a release of k3s been specified?
 	// if not, use latest stable release
@@ -127,34 +123,11 @@ func buildCluster() error {
 
 	// ok validation completed, time to get building
 
-	// create an instance of the VM manager which does building
-	var vmManager core.VMManager
-
-	switch deployConfig.Cloud {
-	case "aws":
-		// TODO: work out how to authenticate for aws
-		vmManager = aws.NewManager(appConfig.LinodeAPIKey)
-		if vmManager == nil {
-			return errors.New("could not create aws client")
-		}
-	case "digitalocean":
-		vmManager = digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
-		if vmManager == nil {
-			return errors.New("could not create digitalocean client")
-		}
-	case "linode":
-		vmManager = linode.NewManager(appConfig.LinodeAPIKey)
-		if vmManager == nil {
-			return errors.New("could not create linode client")
-		}
-	case "vultr":
-		vmManager = vultr.NewManager(appConfig.VultrAPIKey)
-		if vmManager == nil {
-			return errors.New("could not create vultr client")
-		}
-	default:
-		// should never get here (but lets play it safe)
-		return errors.New("invalid cloud type")
+	// create a manager for desired cloud
+	vmManager, err := GetManager(appConfig, deployConfig.Cloud)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	// TODO: for DO, should upload it if not there yet
@@ -172,7 +145,7 @@ func buildCluster() error {
 		if err != nil {
 			return err
 		}
-		log.Info(deployConfig.Region, "is closest")
+		log.Info("region ", deployConfig.Region, " is closest")
 	}
 
 	// TODO - allow config to specify size/type
@@ -228,7 +201,7 @@ func buildCluster() error {
 
 		// print status if it has changed since last time
 		if strings.Compare(lastStatus, status) != 0 {
-			log.Info(status)
+			log.Info("vm in ", status, " state")
 			lastStatus = status
 		}
 	}
@@ -263,7 +236,7 @@ func buildCluster() error {
 
 	// install k3s on the VM
 	k3sVersion := deployConfig.K3sVersion
-	log.Info("installing k3s release", k3sVersion)
+	log.Info("installing k3s release ", k3sVersion)
 	k3sManager.Install(vmPublicIP, k3sVersion, deployConfig.Name)
 
 	// done, cluster up and running

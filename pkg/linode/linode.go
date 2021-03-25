@@ -142,16 +142,13 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 			}
 		}
 
-		log.Info(instance.ID, " ", instance.Label, " ", instance.IPv4)
-		// check tag.  did we create it
-		// if so, convert to generic format
-		// add to results
+		log.Debug(instance.ID, " ", instance.Label, " ", instance.IPv4)
 	}
 
 	return vmInfo, nil
 }
 
-// convert digitalocean droplet info into our generic format
+// convert linode droplet info into our generic format
 func convertVMInfoToGenericFormat(instance linodego.Instance) (core.VMInfo, error) {
 
 	var vmInfo core.VMInfo
