@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -25,7 +24,7 @@ var rootCmd = &cobra.Command{
 // Execute root command
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		// log.Fatal(err)
 		os.Exit(1)
 	}
 }
@@ -36,7 +35,6 @@ func init() {
 
 func initConfig() {
 
-	// TODO: do we need this yet?
 	// setup config file
 	// find home directory
 	home, err := homedir.Dir()

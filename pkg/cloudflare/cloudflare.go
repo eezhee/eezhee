@@ -2,12 +2,11 @@ package cloudflare
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"strings"
 
 	cf "github.com/cloudflare/cloudflare-go"
 	"github.com/eezhee/eezhee/pkg/core"
+	log "github.com/sirupsen/logrus"
 )
 
 // DNSManager controls dns records for hosts
@@ -50,28 +49,28 @@ func Test(apiToken string) bool {
 
 	hostInfo, err := manager.GetHostRecord(clusterName)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
-	fmt.Println(hostInfo)
+	log.Debug(hostInfo)
 
 	err = manager.AddHostRecord(clusterDNSRecord)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
-	fmt.Println(hostInfo)
+	log.Debug(hostInfo)
 
 	clusterDNSRecord.IP = "218.1.2.4"
 	err = manager.UpdateHostRecord(clusterDNSRecord)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 
 	err = manager.DeleteHostRecord(clusterDNSRecord)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 
@@ -151,7 +150,7 @@ func (m *DNSManager) AddHostRecord(hostInfo core.HostInfo) error {
 		log.Fatal(err)
 		return err
 	}
-	fmt.Println(dnsResponse)
+	log.Debug(dnsResponse)
 
 	return nil
 }

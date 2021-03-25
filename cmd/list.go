@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/config"
-	"github.com/eezhee/eezhee/pkg/digitalocean"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -31,12 +31,36 @@ func listVMs() bool {
 		return false
 	}
 
-	manager := digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
+	// see which cloud we have an api token for
+	cloud := appConfig.GetDefaultCloud()
+	if len(cloud) == 0 {
+		// opps, no api keys specified so can't proceed until resolved
+		log.Error("no cloud provider configured. User 'eezhee auth add'")
+		return false
+	}
+
+	// make sure the cluster doesn't already exist
+	// is there a deploy state file
+	deployState := config.NewDeployState()
+	if deployState.FileExists() {
+		err = deployState.Load()
+		if err != nil {
+			return false
+		}
+		cloud = deployState.Cloud
+	}
+
+	// create a manager for desired cloud
+	vmManager, err := GetManager(appConfig, cloud)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
 
 	// get all VMs in our account
-	vmInfo, err := manager.ListVMs()
+	vmInfo, err := vmManager.ListVMs()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 

@@ -3,12 +3,12 @@ package digitalocean
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/eezhee/eezhee/pkg/core"
+	log "github.com/sirupsen/logrus"
 )
 
 // ip addresses to use to find closest region
@@ -47,7 +47,7 @@ type Manager struct {
 func NewManager(providerAPIToken string) (m *Manager) {
 
 	if len(providerAPIToken) == 0 {
-		fmt.Println("no digitalocean api token set")
+		log.Error("no digitalocean api token set")
 		return nil
 	}
 
@@ -88,13 +88,14 @@ func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
 }
 
 // GetVMInfo will get details of a VM
-func (m *Manager) GetVMInfo(vmID int) (vmInfo core.VMInfo, err error) {
+func (m *Manager) GetVMInfo(vmID string) (vmInfo core.VMInfo, err error) {
 
 	// get the latest VM info.  see if status active now
 	ctx := context.TODO()
-	droplet, _, err := m.api.Droplets.Get(ctx, vmID)
+	instanceID, _ := strconv.Atoi(vmID)
+	droplet, _, err := m.api.Droplets.Get(ctx, instanceID)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return vmInfo, err
 	}
 
@@ -166,11 +167,12 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 }
 
 // DeleteVM will delete a given VM
-func (m *Manager) DeleteVM(ID int) error {
+func (m *Manager) DeleteVM(ID string) error {
 
 	ctx := context.TODO()
 
-	_, err := m.api.Droplets.Delete(ctx, ID)
+	instanceID, _ := strconv.Atoi(ID)
+	_, err := m.api.Droplets.Delete(ctx, instanceID)
 	if err != nil {
 		return err
 	}
@@ -183,7 +185,7 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error)
 
 	var vmInfo core.VMInfo
 
-	vmInfo.ID = dropletInfo.ID
+	vmInfo.ID = strconv.Itoa(dropletInfo.ID)
 	vmInfo.Name = dropletInfo.Name
 	vmInfo.Memory = dropletInfo.Memory
 	vmInfo.VCPUs = dropletInfo.Vcpus

@@ -1,9 +1,8 @@
 package core
 
 import (
-	"fmt"
-
 	"github.com/go-ping/ping"
+	log "github.com/sirupsen/logrus"
 )
 
 // const maxPingTime = 750
@@ -36,7 +35,7 @@ func GetPingTime(ipAddress string) (pingTime int64, err error) {
 	pinger, err := ping.NewPinger(ipAddress)
 	// pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return 0, err
 	}
 	pinger.Count = 3

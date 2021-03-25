@@ -7,9 +7,10 @@ package core
 // array with ping times for each ip address
 
 import (
-	"fmt"
 	"math"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/go-ping/ping"
 )
@@ -42,13 +43,13 @@ func getPingTime(pingDetails *IPPingTime, ch chan IPPingTime) {
 			// save results
 			pingTime := stats.AvgRtt.Milliseconds()
 			pingDetails.Time = int(pingTime)
-			fmt.Println(pingDetails.ID, " ", pingDetails.Time, " seconds")
+			log.Debug(pingDetails.ID, " ", pingDetails.Time, " seconds")
 		}
 	}
 
 	if err != nil {
 		// log the error
-		fmt.Println(err)
+		log.Warn(err)
 	}
 
 	// pass results back to caller
@@ -95,7 +96,7 @@ func GetPingTimesForArray(ipAddressList []IPPingTime) (closestRegion string, err
 			closestRegion = result.ID
 			lowestPingTime = result.Time
 		}
-		// fmt.Println(result.name, result.time)
+		// log.Debug(result.name, result.time)
 
 		// do we have all the results?
 		// NOTE: this method was unreliable and would sometimes hang

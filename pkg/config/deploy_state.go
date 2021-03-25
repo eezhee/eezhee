@@ -1,9 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -11,7 +11,7 @@ import (
 type DeployState struct {
 	v            *viper.Viper // used to read/write state
 	Cloud        string       // which cloud cluster was create in
-	ID           int          // ID of the VM cluster is on
+	ID           string       // ID of the VM cluster is on
 	Name         string       // name of the cluster
 	Region       string       // region cluster deployed to
 	Size         string       // VM size
@@ -53,15 +53,15 @@ func (s *DeployState) Load() error {
 	// try and read the file
 	if err := s.v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("nothing to teardown as no state file found")
+			log.Warn("nothing to teardown as no state file found")
 		} else {
-			fmt.Println("error reading state file")
+			log.Error("error reading state file: ", err)
 		}
 		return err
 	}
 
 	s.Cloud = s.v.GetString("cloud")
-	s.ID = s.v.GetInt("id")
+	s.ID = s.v.GetString("id")
 	s.Name = s.v.GetString("name")
 	s.Region = s.v.GetString("region")
 	s.Size = s.v.GetString("size")
@@ -87,7 +87,7 @@ func (s *DeployState) Save() error {
 
 	err := s.v.WriteConfig()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return err
 	}
 
@@ -100,7 +100,7 @@ func (s *DeployState) Delete() error {
 	// remove deploy.yaml
 	err := os.Remove(s.v.ConfigFileUsed())
 	if err != nil {
-		fmt.Println("could not remove deploy-state.yaml file")
+		log.Warn("could not remove deploy-state.yaml file")
 		return err
 	}
 

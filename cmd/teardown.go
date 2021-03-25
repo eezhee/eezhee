@@ -7,10 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/eezhee/eezhee/pkg/config"
-	"github.com/eezhee/eezhee/pkg/core"
-	"github.com/eezhee/eezhee/pkg/digitalocean"
-	"github.com/eezhee/eezhee/pkg/linode"
-	"github.com/eezhee/eezhee/pkg/vultr"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +23,7 @@ var teardownCmd = &cobra.Command{
 
 		err := teardownVM()
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			os.Exit(1)
 		}
 	},
@@ -56,46 +53,41 @@ func teardownVM() error {
 
 	// see which cloud cluster created on
 	cloud := deployStateFile.Cloud
-	var manager core.VMManager
 
-	switch cloud {
-	case "digitalocean":
-		manager = digitalocean.NewManager(appConfig.DigitalOceanAPIKey)
-	case "linode":
-		manager = linode.NewManager(appConfig.LinodeAPIKey)
-	case "vultr":
-		manager = vultr.NewManager(appConfig.VultrAPIKey)
-	default:
-		return errors.New("state file reference cloud we don't support: ")
+	// create a manager for desired cloud
+	vmManager, err := GetManager(appConfig, cloud)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	// get details of VM
 	ID := deployStateFile.ID
-	if ID == 0 {
-		msg := fmt.Sprintf("invalid VM ID: %d - Can not teardown VM\n", ID)
+	if len(ID) == 0 {
+		msg := fmt.Sprintf("invalid VM ID: %s - Can not teardown VM\n", ID)
 		return errors.New(msg)
 	}
 
 	// ready to delete the cluster
-	err = manager.DeleteVM(ID)
+	err = vmManager.DeleteVM(ID)
 	if err != nil {
 		return err
 	}
-	fmt.Println("k3s cluster (and VM) deleted")
+	log.Info("k3s cluster (and VM) deleted")
 
 	// remove the kubeconfig file
 	kubeConfigFile, _ := filepath.Abs("kubeconfig")
 	_ = os.Remove(kubeConfigFile)
-	// if err == nil {
-	// 	fmt.Println("removed kubeconfig for cluster")
-	// }
+	if err == nil {
+		log.Debug("removed kubeconfig for cluster")
+	}
 
 	// remove the deploy state file
 	err = deployStateFile.Delete()
 	if err != nil {
 		return err
 	}
-	// fmt.Println("deploy-state file deleted")
+	log.Debug("deploy-state file deleted")
 
 	return nil
 }

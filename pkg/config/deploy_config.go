@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -51,9 +52,9 @@ func (d *DeployConfig) Load() error {
 
 	if err := d.v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("nothing to teardown as no state file found")
+			log.Warn("nothing to teardown as no state file found")
 		} else {
-			fmt.Println("error reading deploy file")
+			log.Error("error reading deploy file")
 		}
 		return err
 	}
@@ -81,7 +82,7 @@ func (d *DeployConfig) Save() error {
 
 	err := d.v.WriteConfig()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return err
 	}
 
@@ -95,7 +96,8 @@ func (d *DeployConfig) Delete() error {
 	err := os.Remove(d.v.ConfigFileUsed())
 	if err != nil {
 
-		fmt.Printf("could not remove %s file\n", d.v.ConfigFileUsed())
+		msg := fmt.Sprintf("could not remove %s file\n", d.v.ConfigFileUsed())
+		log.Error(msg)
 		return err
 	}
 
