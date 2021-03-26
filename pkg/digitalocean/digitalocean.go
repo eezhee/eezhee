@@ -60,6 +60,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 
 // GetAuthToken will check common place for digitalocean api key
 func (m *Manager) GetAuthToken() string {
+
 	return ""
 }
 
