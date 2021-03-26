@@ -58,6 +58,11 @@ func NewManager(providerAPIToken string) (m *Manager) {
 	return manager
 }
 
+// GetAuthToken will check common place for digitalocean api key
+func (m *Manager) GetAuthToken() string {
+	return ""
+}
+
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 

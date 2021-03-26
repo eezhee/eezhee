@@ -2,11 +2,14 @@ package vultr
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/core"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/vultr/govultr/v2"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
@@ -96,6 +99,32 @@ func NewManager(providerAPIToken string) (m *Manager) {
 
 // 	return nil
 // }
+
+// GetAuthToken will check common place for vultr api key
+func (m *Manager) GetAuthToken() string {
+
+	// is there a config file & does it have a token
+	cfgDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	configPath := fmt.Sprintf("%s/.vultr-cli.yaml", cfgDir)
+
+	viper.AutomaticEnv()
+	viper.SetConfigType("yaml")
+	viper.SetConfigFile(configPath)
+	if err := viper.ReadInConfig(); err != nil {
+		log.Debug("could not read viper config file: ", viper.ConfigFileUsed(), " - ", err)
+	}
+
+	token := viper.GetString("api-key")
+	if token == "" {
+		token = os.Getenv("VULTR_API_KEY")
+	}
+
+	return token
+}
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err error) {
