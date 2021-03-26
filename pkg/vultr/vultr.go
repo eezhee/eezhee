@@ -145,7 +145,7 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 
 // SelectClosestRegion will ping all regions and return the ID of the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-	closestRegion, err = core.GetPingTimesForArray(regionIPs)
+	closestRegion, err = core.GetPingTimes(regionIPs)
 	// note regionsIPs is now filled with ping times
 	return closestRegion, err
 }

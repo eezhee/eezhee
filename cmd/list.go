@@ -24,6 +24,8 @@ var listCmd = &cobra.Command{
 
 func listVMs() bool {
 
+	log.Debug("this is a debug message")
+
 	// get app settings
 	appConfig := config.NewAppConfig()
 	err := appConfig.Load()

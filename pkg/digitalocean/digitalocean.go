@@ -82,7 +82,7 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 
 // SelectClosestRegion will check all DO regions to find the closest
 func (m *Manager) SelectClosestRegion() (closestRegion string, err error) {
-	closestRegion, err = core.GetPingTimesForArray(regionIPs)
+	closestRegion, err = core.GetPingTimes(regionIPs)
 	// note regionsIPs is now filled with ping times
 	return closestRegion, err
 }
@@ -150,6 +150,8 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 		return nil, err
 	}
 
+	log.Debug("account has ", len(droplets), " VMs")
+
 	// go through all VMs and look for VMs that are tagged with 'eezhee'
 	for i := range droplets {
 		if len(droplets[i].Tags) > 0 {
@@ -176,6 +178,8 @@ func (m *Manager) DeleteVM(ID string) error {
 	if err != nil {
 		return err
 	}
+
+	log.Debug("vm ", ID, " deleted")
 
 	return nil
 }

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -17,28 +16,33 @@ type AppConfig struct {
 	CloudFlareAPIKey   string
 	LinodeAPIKey       string
 	VultrAPIKey        string
+	DefaultCloud       string // required if we have more than one api key
 }
 
 // NewAppConfig will create a new deploy file object
 func NewAppConfig() *AppConfig {
 	config := new(AppConfig)
 
-	name := "config"
+	// config will be stored in .eezhee subdir of users home directory
+	// homedir package is cross platform so works on all common OSs
 	homeDir, _ := homedir.Dir()
-	path := homeDir + "/.eezhee"
-	filename := path + "/" + name + ".yaml"
+	path := homeDir + string(os.PathSeparator) + ".eezhee"
 
 	// make sure directory exists
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
-		log.Error("could not create directory ~/.eezhee for config file")
+		log.Error("could not create config directory ", path)
+		log.Error(err)
 		return nil
 	}
 
 	// make sure file can be read or if no file, new file created
+	name := "config"
+	filename := path + string(os.PathSeparator) + name + ".yaml"
+
 	file, err := os.OpenFile(filename, os.O_CREATE, 0755)
 	if err != nil {
-		log.Error("could not initalize config file in directory ~/.eezhee")
+		log.Error("could not create config file. ", err)
 		return nil
 	}
 	file.Close()
@@ -53,20 +57,11 @@ func NewAppConfig() *AppConfig {
 	return config
 }
 
-// FileExists checks if a deploy config file exists in current directory
-func (a *AppConfig) FileExists() bool {
-
-	// try and get info about file
-	_, err := os.Stat(a.v.ConfigFileUsed())
-
-	return err == nil
-}
-
 // Load a given deploy state file
 func (a *AppConfig) Load() error {
 
 	if err := a.v.ReadInConfig(); err != nil {
-		log.Error("could not read eezhee config file: ", err)
+		log.Error("could not read config file: ", err)
 		return err
 	}
 
@@ -74,6 +69,7 @@ func (a *AppConfig) Load() error {
 	a.CloudFlareAPIKey = a.v.GetString("cloudflare-api-key")
 	a.LinodeAPIKey = a.v.GetString("linode-api-key")
 	a.VultrAPIKey = a.v.GetString("vultr-api-key")
+	a.DefaultCloud = a.v.GetString("default-cloud")
 
 	return nil
 }
@@ -81,36 +77,15 @@ func (a *AppConfig) Load() error {
 // Save details of a deploy to the deploy-state file
 func (a *AppConfig) Save() error {
 
-	if len(a.DigitalOceanAPIKey) > 0 {
-		a.v.Set("digitalocean-api-key", a.DigitalOceanAPIKey)
-	}
-	if len(a.CloudFlareAPIKey) > 0 {
-		a.v.Set("cloudflare-api-key", a.CloudFlareAPIKey)
-	}
-	if len(a.LinodeAPIKey) > 0 {
-		a.v.Set("linode-api-key", a.LinodeAPIKey)
-	}
-	if len(a.VultrAPIKey) > 0 {
-		a.v.Set("vultr-api-key", a.VultrAPIKey)
-	}
+	a.v.Set("digitalocean-api-key", a.DigitalOceanAPIKey)
+	a.v.Set("cloudflare-api-key", a.CloudFlareAPIKey)
+	a.v.Set("linode-api-key", a.LinodeAPIKey)
+	a.v.Set("vultr-api-key", a.VultrAPIKey)
+	a.v.Set("default-cloud", a.DefaultCloud)
 
 	err := a.v.WriteConfig()
 	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
-}
-
-// Delete the deploy state file
-func (a *AppConfig) Delete() error {
-
-	// remove deploy.yaml
-	err := os.Remove(a.v.ConfigFileUsed())
-	if err != nil {
-		msg := fmt.Sprintf("could not remove %s file\n", a.v.ConfigFileUsed())
-		log.Error(msg)
+		log.Error("could not save config to disk: ", err)
 		return err
 	}
 
@@ -121,14 +96,20 @@ func (a *AppConfig) Delete() error {
 // if there are multiple, will default to DigitalOcean
 func (a *AppConfig) GetDefaultCloud() string {
 
-	if len(a.DigitalOceanAPIKey) > 0 {
-		return "digitalocean"
-	} else if len(a.LinodeAPIKey) > 0 {
-		return "linode"
-	} else if len(a.VultrAPIKey) > 0 {
-		return "vultr"
+	if len(a.DefaultCloud) > 0 {
+		return a.DefaultCloud
+	} else {
+		// no default set so just return 1st that has API key
+		if len(a.DigitalOceanAPIKey) > 0 {
+			return "digitalocean"
+		} else if len(a.LinodeAPIKey) > 0 {
+			return "linode"
+		} else if len(a.VultrAPIKey) > 0 {
+			return "vultr"
+		}
 	}
 
 	// don't have any API keys so can't have a default
+	log.Debug("no cloud has been configured")
 	return ""
 }

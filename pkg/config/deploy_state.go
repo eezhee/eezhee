@@ -25,7 +25,7 @@ func NewDeployState() (f *DeployState) {
 	state := new(DeployState)
 
 	name := "deploy-state"
-	path := "./"
+	path := "."
 
 	state.v = viper.New()
 	state.v.SetConfigName(name)
@@ -87,7 +87,7 @@ func (s *DeployState) Save() error {
 
 	err := s.v.WriteConfig()
 	if err != nil {
-		log.Error(err)
+		log.Error("could not save state file: ", err)
 		return err
 	}
 
@@ -100,7 +100,7 @@ func (s *DeployState) Delete() error {
 	// remove deploy.yaml
 	err := os.Remove(s.v.ConfigFileUsed())
 	if err != nil {
-		log.Warn("could not remove deploy-state.yaml file")
+		log.Warn("could not remove state file: ", err)
 		return err
 	}
 

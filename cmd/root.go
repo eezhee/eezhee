@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/eezhee/eezhee/pkg/config"
 	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -11,15 +12,19 @@ import (
 
 // var cfgFile string
 
-var rootCmd = &cobra.Command{
-	Use:   "eezhee",
-	Short: "Eezhee is a very simple way to deploy an app to a public cloud",
-	Long: `Eezhee is a very simple way to deploy an app to a public cloud
-							Complete documentation is available at http://github.com/eezhee/eezhee`,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
-	},
-}
+var (
+	Verbose   bool
+	AppConfig *config.AppConfig
+	rootCmd   = &cobra.Command{
+		Use:   "eezhee",
+		Short: "Eezhee is a very simple way to deploy an app to a public cloud",
+		Long: `Eezhee is a very simple way to deploy an app to a public cloud
+								Complete documentation is available at http://github.com/eezhee/eezhee`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Do Stuff Here
+		},
+	}
+)
 
 // Execute root command
 func Execute() {
@@ -31,15 +36,33 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+
 }
 
 func initConfig() {
 
-	// setup config file
 	// find home directory
 	home, err := homedir.Dir()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// setup config file
 	viper.AddConfigPath(home)
+
+	// setup logging
+	log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
+	if Verbose {
+		log.SetLevel(log.DebugLevel)
+	}
+
+	// get app settings
+	AppConfig := config.NewAppConfig()
+	err = AppConfig.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
