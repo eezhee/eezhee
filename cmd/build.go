@@ -40,15 +40,8 @@ var buildCmd = &cobra.Command{
 // buildVM will create a cluster
 func buildCluster() error {
 
-	// get app settings
-	appConfig := config.NewAppConfig()
-	err := appConfig.Load()
-	if err != nil {
-		return err
-	}
-
 	// see which cloud we have an api token for
-	defaultCloud := appConfig.GetDefaultCloud()
+	defaultCloud := AppConfig.GetDefaultCloud()
 	if len(defaultCloud) == 0 {
 		// opps, no api keys specified so can't proceed until resolved
 		return errors.New("no cloud provider configured. User 'eezhee auth add'")
@@ -85,7 +78,7 @@ func buildCluster() error {
 	dir, _ := homedir.Dir()
 	keyFile := dir + "/.ssh/id_rsa.pub"
 
-	err = sshKey.LoadPublicKey(keyFile)
+	err := sshKey.LoadPublicKey(keyFile)
 	if err != nil {
 		return err
 	}
@@ -127,7 +120,7 @@ func buildCluster() error {
 	// ok validation completed, time to get building
 
 	// create a manager for desired cloud
-	vmManager, err := GetManager(appConfig, deployConfig.Cloud)
+	vmManager, err := GetManager(AppConfig, deployConfig.Cloud)
 	if err != nil {
 		log.Error(err)
 		return err

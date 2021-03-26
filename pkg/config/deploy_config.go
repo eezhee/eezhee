@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -25,7 +24,7 @@ func NewDeployConfig() *DeployConfig {
 	deploy := new(DeployConfig)
 
 	name := "deploy"
-	path := "./"
+	path := "."
 
 	// set default filename
 	deploy.v = viper.New()
@@ -54,7 +53,7 @@ func (d *DeployConfig) Load() error {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			log.Warn("nothing to teardown as no state file found")
 		} else {
-			log.Error("error reading deploy file")
+			log.Error("error reading deploy file: ", err)
 		}
 		return err
 	}
@@ -82,7 +81,7 @@ func (d *DeployConfig) Save() error {
 
 	err := d.v.WriteConfig()
 	if err != nil {
-		log.Error(err)
+		log.Error("could not write deploy config to disk: ", err)
 		return err
 	}
 
@@ -95,9 +94,7 @@ func (d *DeployConfig) Delete() error {
 	// remove deploy.yaml
 	err := os.Remove(d.v.ConfigFileUsed())
 	if err != nil {
-
-		msg := fmt.Sprintf("could not remove %s file\n", d.v.ConfigFileUsed())
-		log.Error(msg)
+		log.Error("could not delete deploy config file: ", err)
 		return err
 	}
 

@@ -43,7 +43,7 @@ func getPingTime(pingDetails *IPPingTime, ch chan IPPingTime) {
 			// save results
 			pingTime := stats.AvgRtt.Milliseconds()
 			pingDetails.Time = int(pingTime)
-			log.Debug(pingDetails.ID, " ", pingDetails.Time, " seconds")
+			log.Debug("ping to ", pingDetails.ID, " took ", pingDetails.Time, " mSec")
 		}
 	}
 
@@ -59,7 +59,7 @@ func getPingTime(pingDetails *IPPingTime, ch chan IPPingTime) {
 }
 
 // GetPingTimesForArray will ping all ips/hosts and return the ID of the closest
-func GetPingTimesForArray(ipAddressList []IPPingTime) (closestRegion string, err error) {
+func GetPingTimes(ipAddressList []IPPingTime) (closestRegion string, err error) {
 
 	numIPs := len(ipAddressList)
 
@@ -96,7 +96,6 @@ func GetPingTimesForArray(ipAddressList []IPPingTime) (closestRegion string, err
 			closestRegion = result.ID
 			lowestPingTime = result.Time
 		}
-		// log.Debug(result.name, result.time)
 
 		// do we have all the results?
 		// NOTE: this method was unreliable and would sometimes hang

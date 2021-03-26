@@ -18,7 +18,7 @@ type SSHKey struct {
 func (s *SSHKey) LoadPublicKey(filename string) error {
 
 	if len(filename) == 0 {
-		return errors.New("no filename specified")
+		return errors.New("no filename specified for ssh key")
 	}
 
 	data, err := ioutil.ReadFile(filename)

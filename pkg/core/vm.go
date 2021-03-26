@@ -139,5 +139,5 @@ func (v *VMInfo) GetPublicIP() (publicIP string, err error) {
 	}
 
 	// did not find public IP
-	return publicIP, errors.New("VM does not have public IP")
+	return publicIP, errors.New("VM does not have a public IP")
 }
