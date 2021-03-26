@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/eezhee/eezhee/pkg/config"
@@ -42,6 +43,10 @@ func init() {
 }
 
 func initConfig() {
+
+	cfgDir, err := os.UserConfigDir()
+	fmt.Println(cfgDir)
+	os.Exit(1)
 
 	// find home directory
 	home, err := homedir.Dir()
