@@ -103,23 +103,25 @@ func NewManager(providerAPIToken string) (m *Manager) {
 // GetAuthToken will check common place for vultr api key
 func (m *Manager) GetAuthToken() string {
 
-	// is there a config file & does it have a token
+	// build path for config file
 	cfgDir, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-
 	configPath := fmt.Sprintf("%s/.vultr-cli.yaml", cfgDir)
 
-	viper.AutomaticEnv()
-	viper.SetConfigType("yaml")
-	viper.SetConfigFile(configPath)
-	if err := viper.ReadInConfig(); err != nil {
-		log.Debug("could not read viper config file: ", viper.ConfigFileUsed(), " - ", err)
+	// read config file
+	config := viper.New()
+	config.SetConfigType("yaml")
+	config.SetConfigFile(configPath)
+	if err := config.ReadInConfig(); err != nil {
+		log.Debug("could not read viper config file: ", config.ConfigFileUsed(), " - ", err)
 	}
 
-	token := viper.GetString("api-key")
+	// is there an api key?
+	token := config.GetString("api-key")
 	if token == "" {
+		// no, so check if env variable has it
 		token = os.Getenv("VULTR_API_KEY")
 	}
 

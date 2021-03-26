@@ -2,12 +2,15 @@ package linode
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/linode/linodego"
+	"github.com/pelletier/go-toml"
 	"github.com/sethvargo/go-password/password"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -57,7 +60,31 @@ func NewManager(providerAPIToken string) (m *Manager) {
 
 // GetAuthToken will check common place for digitalocean api key
 func (m *Manager) GetAuthToken() string {
-	return ""
+
+	// build path to config file
+	cfgDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	configPath := fmt.Sprintf("%s/.config/linode-cli", cfgDir)
+
+	// try and read the config file
+	token := ""
+	config, err := toml.LoadFile(configPath)
+	if err == nil {
+		user := config.Get("DEFAULT.default-user").(string)
+		if len(user) > 0 {
+			tokenKey := user + ".token"
+			token = config.Get(tokenKey).(string)
+		}
+	}
+
+	// if still don't have token, see if env variable
+	if len(token) == 0 {
+		token = os.Getenv("LINODE_CLI_TOKEN")
+	}
+
+	return token
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
