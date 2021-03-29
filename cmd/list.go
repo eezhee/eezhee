@@ -24,17 +24,29 @@ var listCmd = &cobra.Command{
 
 func listVMs() bool {
 
-	log.Debug("this is a debug message")
+	// TEMP
+	// get default cloud - from app config
+	//    see which clouds we have auth for
+	//    if = 1, that's the default
+	//    if > 1, 1st
+	// need a way to set default
+	// getAuth
+	vmManager, _ := GetManager("digitalocean")
+	token := vmManager.GetAuthToken()
+	fmt.Println(token)
 
-	// get app settings
-	appConfig := config.NewAppConfig()
-	err := appConfig.Load()
-	if err != nil {
-		return false
-	}
+	vmManager, _ = GetManager("linode")
+	token = vmManager.GetAuthToken()
+	fmt.Println(token)
+
+	vmManager, _ = GetManager("vultr")
+	token = vmManager.GetAuthToken()
+	fmt.Println(token)
+
+	// TEMP
 
 	// see which cloud we have an api token for
-	cloud := appConfig.GetDefaultCloud()
+	cloud := AppConfig.GetDefaultCloud()
 	if len(cloud) == 0 {
 		// opps, no api keys specified so can't proceed until resolved
 		log.Error("no cloud provider configured. User 'eezhee auth add'")
@@ -45,7 +57,7 @@ func listVMs() bool {
 	// is there a deploy state file
 	deployState := config.NewDeployState()
 	if deployState.FileExists() {
-		err = deployState.Load()
+		err := deployState.Load()
 		if err != nil {
 			return false
 		}
@@ -53,7 +65,7 @@ func listVMs() bool {
 	}
 
 	// create a manager for desired cloud
-	vmManager, err := GetManager(appConfig, cloud)
+	vmManager, err := GetManager(cloud)
 	if err != nil {
 		log.Error(err)
 		return false

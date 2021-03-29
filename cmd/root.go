@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/eezhee/eezhee/pkg/config"
@@ -37,16 +36,10 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-
 }
 
 func initConfig() {
-
-	cfgDir, err := os.UserConfigDir()
-	fmt.Println(cfgDir)
-	os.Exit(1)
 
 	// find home directory
 	home, err := homedir.Dir()
@@ -64,7 +57,7 @@ func initConfig() {
 	}
 
 	// get app settings
-	AppConfig := config.NewAppConfig()
+	AppConfig = config.NewAppConfig()
 	err = AppConfig.Load()
 	if err != nil {
 		log.Fatal(err)

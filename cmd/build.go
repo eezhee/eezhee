@@ -120,7 +120,7 @@ func buildCluster() error {
 	// ok validation completed, time to get building
 
 	// create a manager for desired cloud
-	vmManager, err := GetManager(AppConfig, deployConfig.Cloud)
+	vmManager, err := GetManager(deployConfig.Cloud)
 	if err != nil {
 		log.Error(err)
 		return err

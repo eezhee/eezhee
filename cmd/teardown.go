@@ -32,13 +32,6 @@ var teardownCmd = &cobra.Command{
 // teardownVM will tear down the cluster & app
 func teardownVM() error {
 
-	// get app settings
-	appConfig := config.NewAppConfig()
-	err := appConfig.Load()
-	if err != nil {
-		return err
-	}
-
 	// see if there is a state file (so we know what we're supposed to teardown)
 	deployStateFile := config.NewDeployState()
 	if !deployStateFile.FileExists() {
@@ -46,7 +39,7 @@ func teardownVM() error {
 	}
 
 	// load state file
-	err = deployStateFile.Load()
+	err := deployStateFile.Load()
 	if err != nil {
 		return errors.New("error reading deploy state file")
 	}
@@ -55,7 +48,7 @@ func teardownVM() error {
 	cloud := deployStateFile.Cloud
 
 	// create a manager for desired cloud
-	vmManager, err := GetManager(appConfig, cloud)
+	vmManager, err := GetManager(cloud)
 	if err != nil {
 		log.Error(err)
 		return err

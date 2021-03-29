@@ -3,12 +3,15 @@ package digitalocean
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/eezhee/eezhee/pkg/core"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // ip addresses to use to find closest region
@@ -61,7 +64,33 @@ func NewManager(providerAPIToken string) (m *Manager) {
 // GetAuthToken will check common place for digitalocean api key
 func (m *Manager) GetAuthToken() string {
 
-	return ""
+	accessToken := ""
+
+	cfgDir, err := os.UserConfigDir()
+	if err != nil {
+		log.Debug("could not get home dir when looking for digitalocean config:", err)
+		return ""
+	}
+
+	cfgPath := filepath.Join(cfgDir, "doctl")
+	cfgFile := filepath.Join(cfgPath, "config.yaml")
+
+	config := viper.New()
+	config.SetEnvPrefix("DIGITALOCEAN")
+	config.AutomaticEnv()
+	config.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	config.SetConfigType("yaml")
+	config.SetConfigFile(cfgFile)
+
+	if _, err := os.Stat(cfgFile); err == nil {
+		if err := config.ReadInConfig(); err != nil {
+			log.Debug("could not read digitalocean config:", err)
+		}
+
+		accessToken = config.GetString("access-token")
+	}
+
+	return accessToken
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
