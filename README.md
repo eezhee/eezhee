@@ -1,16 +1,14 @@
 # Eezhee
 
-A fast and easy way to create and manage kubernetes clusters on DigitalOcean.  A cluster can normally be built in 1-2 minutes.  Eezhee also makes it easy to update the version of kubernetes if there is a new release.
+A super fast and easy way to create a k3s based kubernetes cluster on a variety of public clouds.  Currently DigitalOcean, Linode and Vultr are support.  All it takes is a single command and about 2 minutes and your cluster is ready to use.  Eezhee is normally used for development, testing or for learning about kubernetes.
 
-In the future, we plan to add support for resizing your cluster and adding base services like Let's Encrypt
+Eezhee will auto discover which cloud you are using and which is the closest region. That means all you have to do is install Eezhee and issue a single `build` command and you will have working cluster.  Or with a simple deploy file, you can set which cloud you want to use and which region to build it in. A given eezhee deploy files will across all providers so you can easily move from one cloud to another.
 
-## Status
-
-Eezhee is still in the early days of being developed. But today it can build a single node k3s cluster with a single command.  Also, it supports `deploy.yaml` files which allow you to define the details of the cluster for each project.
+By default, Eezhee will install the most recent stable version of kubernetes but you can set it to install a wide variety of versions.
 
 ## Installation
 
-Currently Eezhee has only been tested on MacOS.  In the future, there will be support for Windows and Linux.
+Eezhee is written in go so can be run on MacOS, Linux and Windows.  Currently most testing has been done on MacOS so please report any issues with the other OSs.
 
 You can use brew to install Eezhee.  
 
@@ -25,27 +23,37 @@ If you want to update Eezhee, its as simple as:
 brew update eezhee
 ```
 
-Eezhee needs your PC to have DigitalOcean's CLI [`doctl`](https://www.digitalocean.com/docs/apis-clis/doctl/) installed and setup with an API token. If you have already been using DigitalOcean, you probably already have this done.  If not, you can find instructions [here](https://www.digitalocean.com/docs/apis-clis/doctl/how-to/install/)
+To install on Windows or linux, grab the binaries from the release section of github.
+
+## Configuring
+
+If you have the cloud provider's CLI tool installed, then eezhee will automatically discover your API KEY.  Otherwise, you can use the `eezhee cloud {cloudname} {api_key}` command to set
+
+You can config eezhee to work with a single or all the various supported clouds.  If you want to see which clouds are currently configured, use the `eezhee clouds list` command.
 
 ## Usage
 
 To see what commands Eezhee supports, type:
 
 ```bash
-./eezhee help
+./eezhee -h
 ```
 
 ### Create Kubernetes Cluster
 
-This will create a single node k3s cluster in the region closest to the user and create a `kubectl` config file in the current directory.  By default, the most recent version of k3s will be used.
+you can create a cluster simply with the build command
 
 ```bash
 ./eezhee build
 ```
 
+This will create a single node k3s cluster in the region closest to the user and create a `kubectl` config file in the current directory.  By default, the most recent version of k3s will be used.  
+
+If you want to specify which version of kubernetes you want installed or which region to use, see the `Deploy file` section and put the file in the current directory.
+
 ### Delete Cluster
 
-You can easily delete your cluster by using the `teardown` command.  Note, you need to be in the project direction as Eezhee looks for the `deploy-state.yaml` file to get details about the cluster.
+You can easily delete your cluster by using the `teardown` command.  Note, you need to be in same directory as the `build` command was run in as Eezhee looks for the `deploy-state.yaml` file to get details about the cluster.
 
 ```bash
 ./eezhee teardown
@@ -77,13 +85,20 @@ When you create a cluster, Eezhee will look in the current directory to see if t
 
 Currently you can set:
 
-- Size
-- Region.  Defaults to the closest region.  You can set it to any of DigitalOceans regions.  The list of possible values includes:
 - Name.  What you name your cluster. This also matches the kubectl context name
+- Region.  Defaults to the closest region.  You can set it to any of DigitalOceans regions.  The list of possible values includes:
 
 ### Deploy State File
 
 Once a cluster has been created, Eezhee will create a `deploy-state.yaml` file in the current directory.  This has all the key details about your cluster.  This file should be considered read-only.
+
+## Roadmap
+
+The following items are scheduled to be added to eezhee
+
+- add more public clouds (aws is most likely next)
+- support for multi-node clusters and using a variety of VM sizes
+- ability to update or upgrade the kubernetes version of your cluster
 
 ## Final Thoughts
 
