@@ -10,9 +10,9 @@ import (
 
 	"github.com/eezhee/eezhee/pkg/core"
 	"github.com/linode/linodego"
-	"github.com/pelletier/go-toml"
 	"github.com/sethvargo/go-password/password"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
 )
 
@@ -70,13 +70,17 @@ func (m *Manager) GetAuthToken() string {
 
 	// try and read the config file
 	token := ""
-	config, err := toml.LoadFile(configPath)
-	if err == nil {
-		user := config.Get("DEFAULT.default-user").(string)
-		if len(user) > 0 {
-			tokenKey := user + ".token"
-			token = config.Get(tokenKey).(string)
-		}
+	config := viper.New()
+	config.SetConfigType("ini")
+	config.SetConfigFile(configPath)
+	if err := config.ReadInConfig(); err != nil {
+		log.Debug("could not read linode config file: ", config.ConfigFileUsed(), " - ", err)
+	}
+
+	user := config.Get("DEFAULT.default-user").(string)
+	if len(user) > 0 {
+		tokenKey := user + ".token"
+		token = config.Get(tokenKey).(string)
 	}
 
 	// if still don't have token, see if env variable

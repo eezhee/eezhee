@@ -115,7 +115,7 @@ func (m *Manager) GetAuthToken() string {
 	config.SetConfigType("yaml")
 	config.SetConfigFile(configPath)
 	if err := config.ReadInConfig(); err != nil {
-		log.Debug("could not read viper config file: ", config.ConfigFileUsed(), " - ", err)
+		log.Debug("could not read vultr config file: ", config.ConfigFileUsed(), " - ", err)
 	}
 
 	// is there an api key?
