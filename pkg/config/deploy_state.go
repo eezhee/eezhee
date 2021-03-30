@@ -31,7 +31,7 @@ func NewDeployState() (f *DeployState) {
 	state.v.SetConfigName(name)
 	state.v.SetConfigType("yaml")
 	state.v.AddConfigPath(path)
-	filename := path + name + ".yaml"
+	filename := path + string(os.PathSeparator) + name + ".yaml"
 	state.v.SetConfigFile(filename)
 	// state.v.SetEnvPrefix("ez")
 
