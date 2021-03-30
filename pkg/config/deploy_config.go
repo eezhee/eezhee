@@ -12,11 +12,11 @@ import (
 type DeployConfig struct {
 	v            *viper.Viper // viper object
 	Cloud        string       // which cloud cluster was create in
-	Name         string       // what to call the cluster
 	Region       string       // where to deploy the cluster
+	Name         string       // what to call the cluster
+	K3sVersion   string       // version of k3s to use. ie: latest, stable, 1.18, 1.18.3
 	Size         string       // VM size
 	SSHPublicKey string       // which ssh key to allow to acces the VM(s)
-	K3sVersion   string       // version of k3s to use. ie: latest, stable, 1.18, 1.18.3
 }
 
 // NewDeployConfig will create a new deploy file object
@@ -58,13 +58,12 @@ func (d *DeployConfig) Load() error {
 		return err
 	}
 
-	d.Cloud = d.v.GetString("cloud")
 	d.Name = d.v.GetString("name")
+	d.Cloud = d.v.GetString("cloud")
 	d.Region = d.v.GetString("region")
-	d.Size = d.v.GetString("size")
-
-	d.SSHPublicKey = d.v.GetString("ssh-public-key")
 	d.K3sVersion = d.v.GetString("k3s-version")
+	d.Size = d.v.GetString("size")
+	d.SSHPublicKey = d.v.GetString("ssh-public-key")
 
 	return nil
 }
