@@ -35,33 +35,33 @@ func listVMs() bool {
 
 	for _, cloud := range clouds {
 
-		manager, _ := GetManager(cloud)
+		manager, err := GetManager(cloud)
+		if err != nil {
+			// don't have api key for this cloud
+			continue
+		}
 
-		if len(manager.GetAuthToken()) > 0 {
+		// get all VMs in our account
+		vmInfo, err := manager.ListVMs()
+		if err != nil {
+			log.Error(err)
+			return false
+		}
 
-			// get all VMs in our account
-			vmInfo, err := manager.ListVMs()
-			if err != nil {
-				log.Error(err)
-				return false
-			}
-
-			// go through all VMs and look for VMs that are tagged with 'eezhee'
-			for i := range vmInfo {
-				if len(vmInfo[i].Tags) > 0 {
-					for _, tag := range vmInfo[i].Tags {
-						if strings.Compare(tag, "eezhee") == 0 {
-							// we created this VM
-							fmt.Println(vmInfo[i].Name, " (", vmInfo[i].ID, ")  status:", vmInfo[i].Status, " created at:", vmInfo[i].CreatedAt)
-						}
+		// go through all VMs and look for VMs that are tagged with 'eezhee'
+		for i := range vmInfo {
+			if len(vmInfo[i].Tags) > 0 {
+				for _, tag := range vmInfo[i].Tags {
+					if strings.Compare(tag, "eezhee") == 0 {
+						// we created this VM
+						fmt.Println(vmInfo[i].Name, " (", vmInfo[i].ID, ")  status:", vmInfo[i].Status, " created at:", vmInfo[i].CreatedAt)
 					}
 				}
 			}
+		}
 
-			if err != nil {
-				log.Error(err)
-			}
-
+		if err != nil {
+			log.Error(err)
 		}
 
 	}

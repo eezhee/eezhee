@@ -7,7 +7,7 @@ import (
 
 // VMManager is the interface all cloud provider need to follow
 type VMManager interface {
-	GetAuthToken() string
+	FindAuthToken() string
 	ListVMs() (vmInfo []VMInfo, err error)
 	CreateVM(name string, image string, size string, region string, sshKey SSHKey) (VMInfo, error)
 	GetVMInfo(vmID string) (vmInfo VMInfo, err error)
