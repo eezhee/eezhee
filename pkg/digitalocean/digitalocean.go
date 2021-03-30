@@ -49,9 +49,15 @@ type Manager struct {
 // NewManager creates a manage object & inits it
 func NewManager(providerAPIToken string) (m *Manager) {
 
+	// make sure we have an api token
 	if len(providerAPIToken) == 0 {
-		log.Error("no digitalocean api token set")
-		return nil
+		// check places provider CLI tools store token
+		providerAPIToken := m.FindAuthToken()
+		if len(providerAPIToken) == 0 {
+			log.Error("no digitalocean api token set")
+			return nil
+		}
+		// ok we found a token
 	}
 
 	manager := new(Manager)
@@ -62,7 +68,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // GetAuthToken will check common place for digitalocean api key
-func (m *Manager) GetAuthToken() string {
+func (m *Manager) FindAuthToken() string {
 
 	accessToken := ""
 

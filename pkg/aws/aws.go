@@ -22,9 +22,15 @@ func NewManager(providerAPIToken string) (m *Manager) {
 	// if user as aws-cli installed, sdk can find ~/.aws/credential file and load keys
 	// otherwise, we can create it when user enters details
 
+	// make sure we have an api token
 	if len(providerAPIToken) == 0 {
-		log.Error("no aws api token set")
-		return nil
+		// check places provider CLI tools store token
+		providerAPIToken := m.FindAuthToken()
+		if len(providerAPIToken) == 0 {
+			log.Error("no digitalocean api token set")
+			return nil
+		}
+		// ok we found a token
 	}
 
 	manager := new(Manager)
@@ -42,7 +48,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 }
 
 // GetAuthToken will check common place for aws api key
-func (m *Manager) GetAuthToken() string {
+func (m *Manager) FindAuthToken() string {
 	return ""
 }
 

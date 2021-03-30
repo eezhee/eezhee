@@ -41,12 +41,9 @@ var listCloudsCmd = &cobra.Command{
 		for _, cloud := range clouds {
 			manager, err := GetManager(cloud)
 			if err == nil {
-				token := manager.GetAuthToken()
-				if len(token) > 0 {
 					fmt.Println("  ", cloud)
-				} else {
-					fmt.Println("  ", cloud, " (not configured)")
-				}
+			} else {
+				fmt.Println("  ", cloud, " (not configured)")
 			}
 		}
 	},
@@ -82,9 +79,9 @@ func validateArguments(cmd *cobra.Command, args []string) error {
 
 	// make sure only one argument
 	if len(args) < 1 {
-		return errors.New("no api key provided\n")
+		return errors.New("no api key provided")
 	} else if len(args) > 1 {
-		return errors.New("too many arguments specified. only an api key is required\n")
+		return errors.New("too many arguments specified. only an api key is required")
 	}
 
 	// get api key user provided
@@ -107,7 +104,7 @@ func validateArguments(cmd *cobra.Command, args []string) error {
 	// validate api key
 	_, err := manager.ListVMs()
 	if err != nil {
-		return errors.New("invalid api key specified\n")
+		return errors.New("invalid api key specified")
 	}
 
 	return nil
