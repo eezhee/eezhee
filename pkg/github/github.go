@@ -128,7 +128,7 @@ func GetRepoReleases(owner string, repo string) (repoReleases []Release, err err
 			linkType := strings.TrimSpace(linkFields[1])
 
 			if strings.Compare(linkType, "rel=\"next\"") == 0 {
-				apiURL = strings.Trim(link, "<>")
+				apiURL = strings.Trim(link, " <>")
 			}
 		}
 
@@ -274,6 +274,9 @@ func makeRepoReleasesRequest(apiURL string) (data []byte, headers http.Header, e
 
 	// setup api request
 	request, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, nil, err
+	}
 	request.Header.Add("User-agent", "eezhee")
 	request.Header.Add("Accept", "application/vnd.github.v3+json")
 

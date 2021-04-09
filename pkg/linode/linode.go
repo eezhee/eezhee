@@ -43,7 +43,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 		// check places provider CLI tools store token
 		providerAPIToken := m.FindAuthToken()
 		if len(providerAPIToken) == 0 {
-			log.Error("no digitalocean api token set")
+			log.Error("no linode api token set")
 			return nil
 		}
 		// ok we found a token
@@ -81,6 +81,7 @@ func (m *Manager) FindAuthToken() string {
 	config.SetConfigFile(configPath)
 	if err := config.ReadInConfig(); err != nil {
 		log.Debug("could not read linode config file: ", config.ConfigFileUsed(), " - ", err)
+		return ""
 	}
 
 	user := config.Get("DEFAULT.default-user").(string)
