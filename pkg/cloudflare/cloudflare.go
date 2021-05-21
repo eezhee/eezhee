@@ -16,19 +16,20 @@ type DNSManager struct {
 }
 
 // NewDNSManager create an object to manage dns
-func NewDNSManager(providerAPIToken string) (manager *DNSManager, err error) {
+func NewDNSManager(providerAPIToken string) (DNSManager, error) {
+
+	var manager DNSManager
 
 	// make sure api token provided
 	if len(providerAPIToken) == 0 {
-		return nil, errors.New("API token not specified")
+		return manager, errors.New("API token not specified")
 	}
 
-	manager = new(DNSManager)
 	manager.APIToken = providerAPIToken
 
 	worked := manager.Init()
 	if !worked {
-		return nil, err
+		return manager, errors.New("could not init")
 	}
 
 	// dns manager ready to be used

@@ -34,7 +34,7 @@ var listCloudsCmd = &cobra.Command{
 	Long:  `List supported cloud providers and if they are configured"`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		fmt.Println("Supported Clouds:")
+		fmt.Println("Enabled Clouds:")
 
 		// get the subcommmand
 		clouds := []string{"digitalocean", "linode", "vultr"}
@@ -42,9 +42,10 @@ var listCloudsCmd = &cobra.Command{
 			_, err := GetManager(cloud)
 			if err == nil {
 				fmt.Println("  ", cloud)
-			} else {
-				fmt.Println("  ", cloud, " (not configured)")
 			}
+			// else {
+			// 	fmt.Println("  ", cloud, " (not configured)")
+			// }
 		}
 	},
 }
@@ -75,7 +76,7 @@ var vultrApiKeyCmd = &cobra.Command{
 }
 
 // validateArguments will make sure api key is valid
-func validateArguments(cmd *cobra.Command, args []string) error {
+func validateArguments(cmd *cobra.Command, args []string) (err error) {
 
 	// make sure only one argument
 	if len(args) < 1 {
@@ -90,11 +91,20 @@ func validateArguments(cmd *cobra.Command, args []string) error {
 	// need to know which cloud
 	var manager core.VMManager
 	if strings.HasPrefix(cmd.Use, "digitalocean") || strings.HasPrefix(cmd.Use, "do") {
-		manager = digitalocean.NewManager(apiKey)
+		manager, err = digitalocean.NewManager(apiKey)
+		if err != nil {
+			return err
+		}
 	} else if strings.HasPrefix(cmd.Use, "linode") {
-		manager = linode.NewManager(apiKey)
+		manager, err = linode.NewManager(apiKey)
+		if err != nil {
+			return err
+		}
 	} else if strings.HasPrefix(cmd.Use, "vultr") {
-		manager = vultr.NewManager(apiKey)
+		manager, err = vultr.NewManager(apiKey)
+		if err != nil {
+			return err
+		}
 	} else {
 		// cobra will make sure this never is allowed
 		// ie this code should never be called
@@ -102,7 +112,7 @@ func validateArguments(cmd *cobra.Command, args []string) error {
 	}
 
 	// validate api key
-	_, err := manager.ListVMs()
+	_, err = manager.ListVMs()
 	if err != nil {
 		return errors.New("invalid api key specified")
 	}

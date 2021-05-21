@@ -2,6 +2,7 @@ package linode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -36,20 +37,21 @@ type Manager struct {
 }
 
 // NewManager creates a manage object & inits it
-func NewManager(providerAPIToken string) (m *Manager) {
+func NewManager(providerAPIToken string) (core.VMManager, error) {
+
+	manager := new(Manager)
 
 	// make sure we have an api token
 	if len(providerAPIToken) == 0 {
 		// check places provider CLI tools store token
-		providerAPIToken := m.FindAuthToken()
+		providerAPIToken := manager.FindAuthToken()
 		if len(providerAPIToken) == 0 {
-			log.Error("no linode api token set")
-			return nil
+			// log.Error("no linode api token set")
+			return manager, errors.New("no linode api token set")
 		}
 		// ok we found a token
 	}
 
-	manager := new(Manager)
 	manager.APIToken = providerAPIToken
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: manager.APIToken})
 
@@ -61,7 +63,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 
 	manager.api = linodego.NewClient(oauth2Client)
 
-	return manager
+	return manager, nil
 }
 
 // GetAuthToken will check common place for digitalocean api key
