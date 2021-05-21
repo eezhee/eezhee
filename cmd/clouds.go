@@ -39,10 +39,12 @@ var listCloudsCmd = &cobra.Command{
 		// get the subcommmand
 		clouds := []string{"digitalocean", "linode", "vultr"}
 		for _, cloud := range clouds {
-			_, err := GetManager(cloud)
+			manager, err := GetManager(cloud)
 			if err == nil {
 				fmt.Println("  ", cloud)
+				manager.ListVMs()
 			}
+
 			// else {
 			// 	fmt.Println("  ", cloud, " (not configured)")
 			// }
