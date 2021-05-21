@@ -2,6 +2,7 @@ package vultr
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -58,20 +59,21 @@ type Manager struct {
 }
 
 // NewManager creates a manage object & inits it
-func NewManager(providerAPIToken string) (m *Manager) {
+func NewManager(providerAPIToken string) (core.VMManager, error) {
+
+	manager := new(Manager)
 
 	// make sure we have an api token
 	if len(providerAPIToken) == 0 {
 		// check places provider CLI tools store token
-		providerAPIToken := m.FindAuthToken()
+		providerAPIToken := manager.FindAuthToken()
 		if len(providerAPIToken) == 0 {
-			log.Error("no digitalocean api token set")
-			return nil
+			// log.Error("no vultr api token set")
+			return manager, errors.New("no vultr api token set")
 		}
 		// ok we found a token
 	}
 
-	manager := new(Manager)
 	manager.APIToken = providerAPIToken
 
 	config := &oauth2.Config{}
@@ -80,7 +82,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 
 	manager.api = govultr.NewClient(oauth2.NewClient(ctx, ts))
 
-	return manager
+	return manager, nil
 }
 
 // getPlans will get all active plans and sort by price

@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"errors"
 	"math"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,23 +18,22 @@ type Manager struct {
 }
 
 // NewManager creates a manage object & inits it
-func NewManager(providerAPIToken string) (m *Manager) {
+func NewManager(providerAPIToken string) (core.VMManager, error) {
 
 	// if user as aws-cli installed, sdk can find ~/.aws/credential file and load keys
 	// otherwise, we can create it when user enters details
+	manager := new(Manager)
 
 	// make sure we have an api token
 	if len(providerAPIToken) == 0 {
 		// check places provider CLI tools store token
-		providerAPIToken := m.FindAuthToken()
+		providerAPIToken := manager.FindAuthToken()
 		if len(providerAPIToken) == 0 {
-			log.Error("no digitalocean api token set")
-			return nil
+			// log.Error("no aws api token set")
+			return manager, errors.New("no aws api token set")
 		}
 		// ok we found a token
 	}
-
-	manager := new(Manager)
 	manager.APIToken = providerAPIToken
 
 	manager.api = session.Must(session.NewSession(&aws.Config{
@@ -44,7 +44,7 @@ func NewManager(providerAPIToken string) (m *Manager) {
 	// 	SharedConfigState: session.SharedConfigEnable,
 	// }))
 
-	return manager
+	return manager, nil
 }
 
 // GetAuthToken will check common place for aws api key
