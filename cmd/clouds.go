@@ -39,10 +39,10 @@ var listCloudsCmd = &cobra.Command{
 		// get the subcommmand
 		clouds := []string{"digitalocean", "linode", "vultr"}
 		for _, cloud := range clouds {
-			manager, err := GetManager(cloud)
+			_, err := GetManager(cloud)
 			if err == nil {
 				fmt.Println("  ", cloud)
-				manager.ListVMs()
+				// _, err := manager.ListVMs()
 			}
 
 			// else {
