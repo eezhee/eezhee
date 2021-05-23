@@ -1,16 +1,16 @@
 # Eezhee
 
-A super fast and easy way to create a k3s based kubernetes cluster on a variety of public clouds.  Currently DigitalOcean, Linode and Vultr are supported.  All it takes is a single command and about 2 minutes and your cluster is ready to use.  Eezhee is normally used for development, testing or for learning about kubernetes.
+A super fast and easy way to create a k3s based kubernetes cluster on a variety of public clouds.  Currently DigitalOcean, Linode and Vultr are supported.  All it takes is a single command and about 2 minutes and your cluster is ready to use.  Eezhee is ideal for development, testing or learning about Kubernetes.
 
-Eezhee will auto discover which cloud you are using and which is the closest region. That means all you have to do is install Eezhee and issue a single `build` command and you will have a working cluster. Or you can create a simple deploy file if you want to set which cloud to use, which region to build in or which version of kubernetes to install. Deploy files are generally cloud-agnostic so if you change cloud providers, not much has to change.
+What Eezhee does it combine the creation of a VM on the given provider and the installation of kubernetes.  It also does things like auto discover which is the closest region and what is the current stable version of kubernetes.  While you can just issue the `build` command and get a working cluster, you can also customize the cluster using a simple deploy file.  This allows you to specify which region or what version of kubernetes to install. 
 
-By default, Eezhee will install the most recent stable version of kubernetes but you can set it to install a wide variety of kubernetes versions. You can use the `eezhee k3s_versions` to see which versions are available.
+This is early days for Eezhee.  There is lots more functionality I'd like to add.  See the `roadmap` below for details 
 
 ## Installation
 
-Eezhee is written in go so can be run on MacOS, Linux and Windows.  Currently most testing has been done on an x86 MacOS so please report any issues found with the other OSs.  I have begun testing Windows and Linux and will update this README with more details shortly.
+Eezhee is written in Go so can be run on MacOS, Linux and Windows.  Currently most testing has been done on an x86 MacOS with just basic testing on the other OSs.  Please report any issues found with the other OSs. 
 
-The easiest way to install eezhee is with brew.
+On MacOS, the easiest way to install eezhee is with brew.
 
 ```bash
 brew tap eezhee/eezhee
@@ -25,19 +25,11 @@ brew update eezhee
 
 To install on Windows or linux, grab the binaries from the [release section of github](https://github.com/eezhee/eezhee/releases).
 
-## Configuring
+## Configuration
 
-If you have the cloud provider's CLI tool installed, then eezhee will automatically discover your API KEY. You can see which clouds eezhee has found using the `eezhee cloud list` command.  If your cloud is not listed, you will need to set the api key using the `eezhee cloud {cloudname} {api_key}` command.
+If you have the cloud provider's CLI tool installed, then Eezhee will automatically discover your API KEY. Otherwise, you can use the `eezhee clouds {cloudname} {api_key}` command to set the API key Eezhee should use.  If you want to see which clouds are currently configured, type `eezhee clouds list`.   Note, you can config Eezhee to work with a single cloud or all the various supported clouds.
 
-Note, you can config eezhee to work with a single cloud or all the various supported clouds.
-
-## Usage
-
-To see what commands Eezhee supports, type:
-
-```bash
-eezhee -h
-```
+## Using Eezhee
 
 ### Create Kubernetes Cluster
 
@@ -49,11 +41,13 @@ eezhee build
 
 This will determine which cloud region is closest to you and create a single node k3s cluster using the most recent stable version of kubernetes.  It will also generate two files in the current directory.  First `.kubeconfig` file so you can use `kubectl` with your new cluster.  Eezhee will also create a `deploy-state.yaml` file with details about your cluster.
 
-If you want change any of these default, all you have to do is create a simple deploy file. This is where you specify which settings you want to override. It can just be a single setting (like the region to use) or several settings. See the `Deploy file` section and put the file in the current directory.
+By default, your cluster will have the same name as your current directory.  This allows you to name your clusters to match your project names.
+
+If you want customize how your cluster is built, create a `deploy.yaml` file with the settings.  It can just be a single setting (like the region to use) or several settings. See the `Deploy file` section and place the file in the current directory.  If you are using the cluster with a project, put the file in the projects root directory.
 
 ### Delete Cluster
 
-You can easily delete your cluster by using the `teardown` command.  Note, you need to be in same directory as the `build` command was run in as Eezhee looks for the `deploy-state.yaml` file to get details about the cluster.
+When you no longer need your cluster, you can easily delete it with the `teardown` command.  Note, you need to be in same directory as the `build` command was run in as Eezhee looks for the `deploy-state.yaml` file to get details about the cluster.
 
 ```bash
 eezhee teardown
@@ -61,34 +55,47 @@ eezhee teardown
 
 ### List Clusters
 
-If you use Eezhee in several projects, it can be hard to keep track of how many clusters are running.  You can use the `list` command to see what is actually running on your cloud providerat any given point in time.  Eezhee uses tags to flag which VMs where created by eezhee.
+If you use Eezhee in several projects (or across multiple providers), it can be hard to keep track of how many clusters are running.  You can use the `list` command to see what is actually running on your cloud providers at any given point in time.  Eezhee uses tags to flag which VMs where created by eezhee.
 
 ```bash
 eezhee list
 ```
 
-Note, if you want to delete a given cluster, you need to switch to the corresponding project directory. See the note regarding the `deploy-state.yaml` file in the Delete command notes
-
 ### List Supported Kubernetes Versions
 
-If you want to configure your cluster to use a specific version of kubernetes, you can use the `list' command.  This will list each major version and each of the releases availalbe.
+While the default it to build the cluster with the current stable version, many other version are also supported.  Use the `k3s_versions` command to list all the supported versions.   This will list each major version and each of the releases available for that version.
 
 ```bash
-eezhee k3s_versions
+$ eezhee k3s_versions
+latest:  v1.21.1
+stable:  v1.20.7
+v1.20:  v1.20.7 v1.20.6 v1.20.5 v1.20.4 v1.20.2 v1.20.0 v1.20.0
+.
+.
+.
+v1.16:  v1.16.15 v1.16.14 v1.16.13 v1.16.11 v1.16.10 v1.16.9 v1.16.7
 ```
 
-You can then put the desired version into a `deploy.yaml` file that you use with the `build` command.
+## Help
+
+To see all the commands Eezhee supports, type:
+
+```bash
+eezhee help
+```
 
 ## Config Files
 
 ### Deploy Config File
 
-When you create a cluster, Eezhee will look in the current directory to see if there is a `deploy.yaml` file.  This allows you to overide the defautls and set various parameters for your cluster.
+Create a `deploy.yaml` file if you want to customize how the cluster is built.    The `build` command looks in the current directory for this file.  If found, the settings overide the defaults.
 
 Currently you can set:
 
-- Name.  What you name your cluster. This also matches the kubectl context name
-- Region.  Defaults to the closest region.  You can set it to any of DigitalOceans regions.  The list of possible values includes:
+- `name`:  What you name your cluster. This will also be the kubectl context name. 
+- `cloud`: Which provider to use.  This is only necessary if you have configured Eezhee to work with several providers
+- `region`:  Defaults to the closest region.  You can set it to any of the providers regions. Note, right now regions name as provider specific but this is likely to change in the future as Eezhee config files should be provider agnostic.  
+- `k3s-version`: Which version of Kubernetes to install.  It must be one reported with the `k3s_version` command.
 
 ### Deploy State File
 
@@ -96,14 +103,17 @@ Once a cluster has been created, Eezhee will create a `deploy-state.yaml` file i
 
 ## Roadmap
 
-The following items are scheduled to be added to eezhee
+Something things that are planned include:
 
 - add more public clouds (aws is most likely next)
+- ability to update the kubernetes version of a running cluster (within the same stream ie 1.20.1 -> 1.20.6)
+- generic (provider agnostic) way of specifying a VM size or region
+- ability to resize the VM your cluster uses
+- ability to add nodes to your cluster
 - support for multi-node clusters and using a variety of VM sizes
-- ability to update or upgrade the kubernetes version of your cluster
 
 ## Final Thoughts
 
 Hopefully Eezhee will make it easier for you to leverage all the benefits of kubernetes without getting bogged down in the details.  
 
-Good luck and have fun!
+Good luck, have fun and let me know your thoughts!
