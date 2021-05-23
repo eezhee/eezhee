@@ -22,7 +22,7 @@ var listCmd = &cobra.Command{
 	},
 }
 
-func listVMs() bool {
+func listVMs() {
 
 	clouds := []string{"digitalocean", "linode", "vultr"}
 
@@ -48,7 +48,6 @@ func listVMs() bool {
 		vmInfo, err := manager.ListVMs()
 		if err != nil {
 			log.Error(err)
-			return false
 		}
 
 		// go through all VMs and look for VMs that are tagged with 'eezhee'
@@ -78,5 +77,4 @@ func listVMs() bool {
 		fmt.Println("no clusters currently running")
 	}
 
-	return true
 }
