@@ -14,7 +14,7 @@ func init() {
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List the apps you have running",
+	Short: "List all your running clusters",
 	Long:  `All software has versions. This is Eezhee's`,
 	Run: func(cmd *cobra.Command, args []string) {
 		listVMs()
@@ -32,6 +32,8 @@ func listVMs() bool {
 	// 	log.Error("no cloud provider configured. User 'eezhee auth add'")
 	// 	return false
 	// }
+
+	numClusters := 0
 
 	for _, cloud := range clouds {
 
@@ -55,9 +57,14 @@ func listVMs() bool {
 					if strings.Compare(tag, "eezhee") == 0 {
 						// we created this VM
 						fmt.Println(vmInfo[i].Name, " (", vmInfo[i].ID, ")  status:", vmInfo[i].Status, " created at:", vmInfo[i].CreatedAt)
+						numClusters = numClusters + 1
 					}
 				}
 			}
+		}
+
+		if numClusters == 0 {
+			fmt.Println("no clusters currently running")
 		}
 
 		if err != nil {
