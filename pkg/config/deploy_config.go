@@ -31,7 +31,7 @@ func NewDeployConfig() *DeployConfig {
 	deploy.v.SetConfigName(name)
 	deploy.v.AddConfigPath(path)
 	deploy.v.SetConfigType("yaml")
-	filename := path + name + ".yaml"
+	filename := path + string(os.PathSeparator) + name + ".yaml"
 	deploy.v.SetConfigFile(filename)
 
 	return deploy

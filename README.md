@@ -73,8 +73,6 @@ latest:  v1.21.1
 stable:  v1.20.7
 v1.20:  v1.20.7 v1.20.6 v1.20.5 v1.20.4 v1.20.2 v1.20.0 v1.20.0
 .
-.
-.
 v1.16:  v1.16.15 v1.16.14 v1.16.13 v1.16.11 v1.16.10 v1.16.9 v1.16.7
 ```
 
@@ -97,7 +95,7 @@ Currently you can set:
 - `name`:  What you name your cluster. This will also be the kubectl context name. 
 - `cloud`: Which provider to use.  This is only necessary if you have configured Eezhee to work with several providers
 - `region`:  Defaults to the closest region.  You can set it to any of the providers regions. Note, right now regions name as provider specific but this is likely to change in the future as Eezhee config files should be provider agnostic.  
-- `k3s-version`: Which version of Kubernetes to install.  It must be one reported with the `k3s_version` command.
+- `k3s-version`: Which version of Kubernetes to install.  It must be one reported with the `k3s_version` command.  Options include `stable`, `latest`, a channel (ie `v1.20`) or a specific version (ie `v1.20.3`)
 
 ### Deploy State File
 
