@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -51,26 +52,30 @@ func listVMs() bool {
 		}
 
 		// go through all VMs and look for VMs that are tagged with 'eezhee'
-		for i := range vmInfo {
-			if len(vmInfo[i].Tags) > 0 {
-				for _, tag := range vmInfo[i].Tags {
-					if strings.Compare(tag, "eezhee") == 0 {
-						// we created this VM
-						fmt.Println(vmInfo[i].Name, " (", vmInfo[i].ID, ")  status:", vmInfo[i].Status, " created at:", vmInfo[i].CreatedAt)
-						numClusters = numClusters + 1
+		if len(vmInfo) > 0 {
+			fmt.Println(cloud, ":")
+			for i := range vmInfo {
+				if len(vmInfo[i].Tags) > 0 {
+					for _, tag := range vmInfo[i].Tags {
+						if strings.Compare(tag, "eezhee") == 0 {
+							// we created this VM
+							createdTimestamp, err := time.Parse(time.RFC3339, vmInfo[i].CreatedAt)
+							if err != nil {
+								fmt.Println("error: ", err)
+								continue
+							}
+							fmt.Printf("  %s (%s)  status: %s  created at: %s\n", vmInfo[i].Name, vmInfo[i].ID, vmInfo[i].Status,
+								createdTimestamp.Format("2006-01-02 15:04"))
+							numClusters = numClusters + 1
+						}
 					}
 				}
 			}
 		}
+	}
 
-		if numClusters == 0 {
-			fmt.Println("no clusters currently running")
-		}
-
-		if err != nil {
-			log.Error(err)
-		}
-
+	if numClusters == 0 {
+		fmt.Println("no clusters currently running")
 	}
 
 	return true

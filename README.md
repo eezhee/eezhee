@@ -43,6 +43,8 @@ This will determine which cloud region is closest to you and create a single nod
 
 By default, your cluster will have the same name as your current directory.  This allows you to name your clusters to match your project names.
 
+The default VM size of a cluster has 2GB of memory.  This currently can't be changed but should be in the next release (v0.3)
+
 If you want customize how your cluster is built, create a `deploy.yaml` file with the settings.  It can just be a single setting (like the region to use) or several settings. See the `Deploy file` section and place the file in the current directory.  If you are using the cluster with a project, put the file in the projects root directory.
 
 ### Delete Cluster
