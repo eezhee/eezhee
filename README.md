@@ -1,6 +1,6 @@
 # Eezhee
 
-A super fast and easy way to create a k3s based kubernetes cluster on a variety of public clouds.  Currently DigitalOcean, Linode and Vultr are supported.  All it takes is a single command and about 2 minutes and your cluster is ready to use.  Eezhee is ideal for development, testing or learning about Kubernetes.
+A super fast and easy way to create a k3s based kubernetes cluster on a variety of public clouds.  Currently DigitalOcean, Linode and Vultr are supported.  All it takes is a single command and about 2 minutes and your cluster is ready to use.  Most of the time is taken by the cloud provider bring up the base VM. Eezhee is ideal for development, testing or learning about Kubernetes.
 
 What Eezhee does it combine the creation of a VM on the given provider and the installation of kubernetes.  It also does things like auto discover which is the closest region and what is the current stable version of kubernetes.  While you can just issue the `build` command and get a working cluster, you can also customize the cluster using a simple deploy file.  This allows you to specify which region or what version of kubernetes to install. 
 
