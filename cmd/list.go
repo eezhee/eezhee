@@ -58,7 +58,17 @@ func listVMs() {
 					for _, tag := range vmInfo[i].Tags {
 						if strings.Compare(tag, "eezhee") == 0 {
 							// we created this VM
-							createdTimestamp, err := time.Parse(time.RFC3339, vmInfo[i].CreatedAt)
+							// TODO: this conversion should probalby be done in the provider
+							var createdTimestamp time.Time
+							switch cloud {
+							case "digitalocean":
+								createdTimestamp, err = time.Parse(time.RFC3339, vmInfo[i].CreatedAt)
+							case "linode":
+								createdTimestamp, err = time.Parse("2006-01-02 15:04:05 +0000 UTC", vmInfo[i].CreatedAt)
+							case "vultr":
+								createdTimestamp, err = time.Parse(time.RFC3339, vmInfo[i].CreatedAt)
+							default:
+							}
 							if err != nil {
 								fmt.Println("error: ", err)
 								continue

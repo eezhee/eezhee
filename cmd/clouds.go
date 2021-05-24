@@ -36,18 +36,24 @@ var listCloudsCmd = &cobra.Command{
 
 		fmt.Println("Enabled Clouds:")
 
-		// get the subcommmand
+		// go through each cloud and see if enabled
+		numEnabled := 0
 		clouds := []string{"digitalocean", "linode", "vultr"}
 		for _, cloud := range clouds {
 			_, err := GetManager(cloud)
 			if err == nil {
 				fmt.Println("  ", cloud)
 				// _, err := manager.ListVMs()
+				numEnabled = numEnabled + 1
 			}
 
 			// else {
 			// 	fmt.Println("  ", cloud, " (not configured)")
 			// }
+		}
+
+		if numEnabled == 0 {
+			fmt.Println("no clouds enabled.  use `eezhee clouds [digitalocean|linode|vultr] [api_key]` to set")
 		}
 	},
 }
