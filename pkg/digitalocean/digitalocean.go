@@ -128,7 +128,7 @@ func (m *Manager) UploadSSHKey(keyName string, sshKey core.SSHKey) (keyID string
 	// if provider account shared with  more than one person, key name needs to be unique
 	// let's add first few characters  fingerprint
 	fingerprint := sshKey.Fingerprint()
-	keyName = keyName + fingerprint[0:6]
+	keyName = keyName + "-" + fingerprint[0:8]
 
 	createRequest := &godo.KeyCreateRequest{
 		Name:      keyName,
