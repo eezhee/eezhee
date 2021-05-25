@@ -89,7 +89,7 @@ func buildCluster() error {
 	}
 	err = sshKey.LoadPublicKey(publicKeyFile)
 	if err != nil {
-		return err
+    return err
 	}
 	deployConfig.SSHPublicKey = sshKey.GetPublicKey()
 
