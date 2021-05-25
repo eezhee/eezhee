@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -289,7 +290,7 @@ func buildClusterName() (string, error) {
 func getCurrentDir() (string, error) {
 
 	fullDirPath, _ := os.Getwd()
-	fields := strings.Split(fullDirPath, "/")
+	fields := strings.Split(fullDirPath, strconv.QuoteRune(os.PathSeparator))
 	currentDir := fields[len(fields)-1]
 
 	return currentDir, nil
