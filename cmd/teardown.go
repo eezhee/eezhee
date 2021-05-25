@@ -63,6 +63,9 @@ func teardownVM() error {
 	}
 
 	// prompt to make sure user really wants to do this
+	// note: if trying to debug with vscode, look at:
+	// https://github.com/golang/vscode-go/issues/124 or
+	// https://github.com/go-delve/delve/issues/1274
 	response := ""
 	fmt.Printf("are you sure you want to delete %s cluster (Y/n)? ", deployStateFile.Name)
 	fmt.Scanln(&response)

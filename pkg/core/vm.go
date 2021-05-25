@@ -14,6 +14,7 @@ type VMManager interface {
 	DeleteVM(ID string) error
 	// UploadSSHKey()
 	IsSSHKeyUploaded(sshKey SSHKey) (string, error)
+	UploadSSHKey(keyName string, sshKey SSHKey) (string, error)
 	SelectClosestRegion() (closestRegion string, err error)
 }
 

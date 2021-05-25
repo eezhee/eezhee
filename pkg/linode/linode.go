@@ -100,8 +100,16 @@ func (m *Manager) FindAuthToken() string {
 	return token
 }
 
-// IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
+// IsSSHKeyUploaded checks if ssh key already uploaded
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
+
+	// don't need to do anything as ssh key is added during instance creation
+
+	return "1", nil
+}
+
+// UploadSSHKey uploads a given ssh key to the provider
+func (m *Manager) UploadSSHKey(keyName string, sshKey core.SSHKey) (string, error) {
 
 	// don't need to do anything as ssh key is added during instance creation
 

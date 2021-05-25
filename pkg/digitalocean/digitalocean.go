@@ -3,6 +3,7 @@ package digitalocean
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -119,6 +120,30 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (string, error) {
 	}
 
 	return "", errors.New("ssh key not available on digitalocean")
+}
+
+// UploadSSHKey will upload given key to the provider
+func (m *Manager) UploadSSHKey(keyName string, sshKey core.SSHKey) (keyID string, err error) {
+
+	// if provider account shared with  more than one person, key name needs to be unique
+	// let's add first few characters  fingerprint
+	fingerprint := sshKey.Fingerprint()
+	keyName = keyName + fingerprint[0:6]
+
+	createRequest := &godo.KeyCreateRequest{
+		Name:      keyName,
+		PublicKey: sshKey.GetPublicKey(),
+	}
+
+	ctx := context.Background()
+	key, _, err := m.api.Keys.Create(ctx, createRequest)
+	if err != nil {
+		msg := fmt.Sprintf("could not upload ssh key: %s", err)
+		return "", errors.New(msg)
+	}
+
+	id := strconv.Itoa(key.ID)
+	return id, nil
 }
 
 // SelectClosestRegion will check all DO regions to find the closest
