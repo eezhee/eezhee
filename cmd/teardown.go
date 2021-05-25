@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/eezhee/eezhee/pkg/config"
 	log "github.com/sirupsen/logrus"
@@ -59,6 +60,15 @@ func teardownVM() error {
 	if len(ID) == 0 {
 		msg := fmt.Sprintf("invalid VM ID: %s - Can not teardown VM\n", ID)
 		return errors.New(msg)
+	}
+
+	// prompt to make sure user really wants to do this
+	response := ""
+	fmt.Printf("are you sure you want to delete %s cluster (Y/n)? ", deployStateFile.Name)
+	fmt.Scanln(&response)
+	response = strings.ToLower(response)
+	if (response != "") && (response != "y") {
+		return errors.New("deletion aborted")
 	}
 
 	// ready to delete the cluster

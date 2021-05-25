@@ -133,7 +133,7 @@ func (m *Manager) FindAuthToken() string {
 	return token
 }
 
-// IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean
+// IsSSHKeyUploaded checks if ssh key already uploaded to Vultr
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err error) {
 
 	// get all keys that are on vutrl
