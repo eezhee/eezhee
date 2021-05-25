@@ -8,6 +8,7 @@ package core
 
 import (
 	"math"
+	"runtime"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -33,6 +34,10 @@ func getPingTime(pingDetails *IPPingTime, ch chan IPPingTime) {
 		// set ping parameters
 		pinger.Count = numPings
 		pinger.Timeout = time.Millisecond * maxPingTime // milliseconds
+		if runtime.GOOS == "windows" {
+			// https://github.com/go-ping/ping#windows
+			pinger.SetPrivileged(true)
+		}
 
 		// do the ping test
 		err = pinger.Run() // blocks until finished
