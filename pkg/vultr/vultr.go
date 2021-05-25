@@ -161,22 +161,36 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 		}
 	}
 
-	// we need to add the key
+	// did we find the key?
 	if !haveKey {
-
-		newKey := &govultr.SSHKeyReq{
-			Name:   "athir-eezhee",
-			SSHKey: desiredSSHKey.GetPublicKey(),
-		}
-
-		key, err := m.api.SSHKey.Create(context.Background(), newKey)
-		if err != nil {
-			return "", err
-		}
-		keyID = key.ID
+		return "", errors.New("ssh key not available on provider")
 	}
 
 	return keyID, nil
+}
+
+// UploadSSHKey will upload an SSH key to the cloud provider
+func (m *Manager) UploadSSHKey(keyName string, sshKey core.SSHKey) (keyID string, err error) {
+
+	// if provider account shared with  more than one person, key name needs to be unique
+	// let's add first few characters  fingerprint
+	fingerprint := sshKey.Fingerprint()
+	keyName = keyName + "-" + fingerprint[0:8]
+
+	newKey := &govultr.SSHKeyReq{
+		Name:   keyName,
+		SSHKey: sshKey.GetPublicKey(),
+	}
+
+	key, err := m.api.SSHKey.Create(context.Background(), newKey)
+	if err != nil {
+		msg := fmt.Sprintf("could not upload ssh key: %s", err)
+		return "", errors.New(msg)
+	}
+	keyID = key.ID
+
+	return keyID, nil
+
 }
 
 // SelectClosestRegion will ping all regions and return the ID of the closest

@@ -139,7 +139,11 @@ func buildCluster() error {
 	// make sure this ssh key is loaded into cloud platform
 	_, err = vmManager.IsSSHKeyUploaded(sshKey)
 	if err != nil {
-		return err
+		_, err = vmManager.UploadSSHKey("eezhee", sshKey)
+		if err != nil {
+			return err
+		}
+		// else we're all good and can continue
 	}
 
 	// TODO: need to valide if it a valid region for given cloud

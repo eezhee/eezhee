@@ -74,16 +74,24 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 		return keyID, nil
 	}
 
+	// is not on AWS yet
+	return "", err
+}
+
+// UploadSSHKey will upload a given ssh key to AWS
+func (m *Manager) UploadSSHKey(keyName string, sshKey core.SSHKey) (keyID string, err error) {
+
 	// need to create a new keypair
 	var keyPairInfo ec2.ImportKeyPairInput
-	keyPairInfo.SetKeyName("athir")
-	keyPairInfo.SetPublicKeyMaterial([]byte("dakjfdalkjfadslkj"))
+	keyPairInfo.SetKeyName(keyName)
+	keyPairInfo.SetPublicKeyMaterial([]byte(sshKey.GetPublicKey()))
 	//keyPairInfo.SetDryRun()
 	err = keyPairInfo.Validate()
 	if err != nil {
 		return keyID, err
 	}
 
+	svc := ec2.New(m.api)
 	keyPair, err := svc.ImportKeyPair(&keyPairInfo)
 	if err != nil {
 		return keyID, err
