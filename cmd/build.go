@@ -76,11 +76,16 @@ func buildCluster() error {
 	var sshKey core.SSHKey
 
 	dir, _ := homedir.Dir()
-	keyFile := dir + "/.ssh/id_rsa.pub"
+	publicKeyFile := dir + "/.ssh/id_rsa.pub"
 
-	err := sshKey.LoadPublicKey(keyFile)
+	err := sshKey.LoadPublicKey(publicKeyFile)
 	if err != nil {
-		return err
+		// if machine has no ssh key, generate one
+		// make sure the files don't exist first
+		err = sshKey.GenerateNewKey(publicKeyFile)
+		if err != nil {
+			return err
+		}
 	}
 	deployConfig.SSHPublicKey = sshKey.GetPublicKey()
 
