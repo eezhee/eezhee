@@ -20,7 +20,7 @@ brew install eezhee
 If you want to update Eezhee, its as simple as:
 
 ```bash
-brew update eezhee
+brew upgrade eezhee
 ```
 
 To install on Windows or linux, grab the binaries from the [release section of github](https://github.com/eezhee/eezhee/releases).
