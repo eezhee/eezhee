@@ -73,6 +73,8 @@ func (m *Manager) FindAuthToken() string {
 
 	accessToken := ""
 
+	// doctl calls os.UserConfigDir() to figure out where to save config file
+
 	cfgDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Debug("could not get home dir when looking for digitalocean config:", err)

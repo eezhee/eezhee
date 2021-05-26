@@ -69,12 +69,31 @@ func NewManager(providerAPIToken string) (core.VMManager, error) {
 // GetAuthToken will check common place for digitalocean api key
 func (m *Manager) FindAuthToken() string {
 
+	// linode-cli looks at two places for config.  The legacy and current config path
+	// legacy is in .linode-cli file in home directory.  current is in linode-cli file
+	// that is in XDG_CONFIG_HOME or if not set, in home/.config dir
+	// LEGACY_CONFIG_DIR = os.path.expanduser('~')
+	// LEGACY_CONFIG_NAME = '.linode-cli'
+	// CONFIG_DIR = os.environ.get('XDG_CONFIG_HOME', "{}/{}".format(os.path.expanduser('~'), '.config'))
+	// CONFIG_NAME = 'linode-cli'
+	// linode-cli is written in python and uses the built-in ConfigParser
+
 	// build path to config file
 	cfgDir, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-	configPath := fmt.Sprintf("%s/.config/linode-cli", cfgDir)
+	var configPath string
+	legacyConfigPath := fmt.Sprintf("%s/.linode-cli", cfgDir)
+	currentConfigPath := fmt.Sprintf("%s/.config/linode-cli", cfgDir)
+
+	// see if there is a config file in legacy path
+	_, err = os.Stat(legacyConfigPath)
+	if err == nil {
+		configPath = legacyConfigPath
+	} else {
+		configPath = currentConfigPath
+	}
 
 	// try and read the config file
 	token := ""
