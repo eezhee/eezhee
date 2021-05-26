@@ -62,9 +62,15 @@
          "price_hourly" : 0.00893,
          "price_monthly" : 6,
          "regions" : [
+            "ams3",
+            "blr1",
             "fra1",
+            "lon1",
+            "nyc1",
             "nyc3",
-            "sfo3"
+            "sfo3",
+            "sgp1",
+            "tor1"
          ],
          "slug" : "s-1vcpu-1gb-amd",
          "transfer" : 1,
@@ -149,9 +155,15 @@
          "price_hourly" : 0.01786,
          "price_monthly" : 12,
          "regions" : [
+            "ams3",
+            "blr1",
             "fra1",
+            "lon1",
+            "nyc1",
             "nyc3",
-            "sfo3"
+            "sfo3",
+            "sgp1",
+            "tor1"
          ],
          "slug" : "s-1vcpu-2gb-amd",
          "transfer" : 2,
@@ -262,9 +274,15 @@
          "price_hourly" : 0.02679,
          "price_monthly" : 18,
          "regions" : [
+            "ams3",
+            "blr1",
             "fra1",
+            "lon1",
+            "nyc1",
             "nyc3",
-            "sfo3"
+            "sfo3",
+            "sgp1",
+            "tor1"
          ],
          "slug" : "s-2vcpu-2gb-amd",
          "transfer" : 3,
@@ -349,9 +367,15 @@
          "price_hourly" : 0.03571,
          "price_monthly" : 24,
          "regions" : [
+            "ams3",
+            "blr1",
             "fra1",
+            "lon1",
+            "nyc1",
             "nyc3",
-            "sfo3"
+            "sfo3",
+            "sgp1",
+            "tor1"
          ],
          "slug" : "s-2vcpu-4gb-amd",
          "transfer" : 4,
@@ -367,6 +391,7 @@
          "regions" : [
             "ams3",
             "blr1",
+            "fra1",
             "lon1",
             "nyc1",
             "nyc3",
@@ -502,9 +527,15 @@
          "price_hourly" : 0.07143,
          "price_monthly" : 48,
          "regions" : [
+            "ams3",
+            "blr1",
             "fra1",
+            "lon1",
+            "nyc1",
             "nyc3",
-            "sfo3"
+            "sfo3",
+            "sgp1",
+            "tor1"
          ],
          "slug" : "s-4vcpu-8gb-amd",
          "transfer" : 5,
@@ -520,10 +551,12 @@
          "regions" : [
             "ams3",
             "blr1",
+            "fra1",
             "lon1",
             "nyc1",
             "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "s-4vcpu-8gb-intel",
@@ -544,7 +577,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "g-2vcpu-8gb",
          "transfer" : 4,
@@ -564,7 +598,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "gd-2vcpu-8gb",
          "transfer" : 4,
@@ -744,9 +779,15 @@
          "price_hourly" : 0.14286,
          "price_monthly" : 96,
          "regions" : [
+            "ams3",
+            "blr1",
             "fra1",
+            "lon1",
+            "nyc1",
             "nyc3",
-            "sfo3"
+            "sfo3",
+            "sgp1",
+            "tor1"
          ],
          "slug" : "s-8vcpu-16gb-amd",
          "transfer" : 6,
@@ -762,10 +803,12 @@
          "regions" : [
             "ams3",
             "blr1",
+            "fra1",
             "lon1",
             "nyc1",
             "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "s-8vcpu-16gb-intel",
@@ -808,7 +851,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "g-4vcpu-16gb",
          "transfer" : 5,
@@ -827,7 +871,9 @@
             "fra1",
             "lon1",
             "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so-2vcpu-16gb",
@@ -870,7 +916,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "gd-4vcpu-16gb",
          "transfer" : 5,
@@ -912,6 +959,7 @@
             "fra1",
             "lon1",
             "nyc1",
+            "nyc3",
             "sfo3",
             "tor1"
          ],
@@ -1071,7 +1119,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "g-8vcpu-32gb",
          "transfer" : 6,
@@ -1115,7 +1164,9 @@
             "fra1",
             "lon1",
             "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so-4vcpu-32gb",
@@ -1158,7 +1209,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "gd-8vcpu-32gb",
          "transfer" : 6,
@@ -1197,7 +1249,9 @@
             "fra1",
             "lon1",
             "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so1_5-4vcpu-32gb",
@@ -1353,7 +1407,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "g-16vcpu-64gb",
          "transfer" : 7,
@@ -1418,7 +1473,9 @@
             "fra1",
             "lon1",
             "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so-8vcpu-64gb",
@@ -1461,7 +1518,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "gd-16vcpu-64gb",
          "transfer" : 7,
@@ -1500,7 +1558,9 @@
             "fra1",
             "lon1",
             "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so1_5-8vcpu-64gb",
@@ -1519,6 +1579,7 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
             "sgp1",
@@ -1629,6 +1690,7 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
             "sgp1",
@@ -1649,6 +1711,7 @@
             "ams3",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
             "sgp1",
@@ -1672,7 +1735,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "g-32vcpu-128gb",
          "transfer" : 8,
@@ -1712,7 +1776,10 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so-16vcpu-128gb",
@@ -1728,8 +1795,10 @@
          "price_monthly" : 1000,
          "regions" : [
             "ams3",
+            "blr1",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
             "sgp1",
@@ -1753,7 +1822,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "gd-32vcpu-128gb",
          "transfer" : 8,
@@ -1789,6 +1859,7 @@
             "ams3",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
             "sgp1",
@@ -1812,7 +1883,8 @@
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "g-40vcpu-160gb",
          "transfer" : 9,
@@ -1830,7 +1902,10 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so1_5-16vcpu-128gb",
@@ -1848,6 +1923,8 @@
             "ams3",
             "fra1",
             "lon1",
+            "nyc1",
+            "nyc3",
             "sfo3",
             "sgp1"
          ],
@@ -1863,12 +1940,14 @@
          "price_hourly" : 1.93452,
          "price_monthly" : 1300,
          "regions" : [
+            "ams3",
             "fra1",
             "lon1",
             "nyc1",
             "nyc3",
             "sfo3",
-            "sgp1"
+            "sgp1",
+            "tor1"
          ],
          "slug" : "gd-40vcpu-160gb",
          "transfer" : 9,
@@ -1886,8 +1965,10 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so-24vcpu-192gb",
@@ -1905,6 +1986,7 @@
             "ams3",
             "fra1",
             "lon1",
+            "nyc1",
             "nyc3",
             "sfo3",
             "sgp1",
@@ -1925,6 +2007,8 @@
             "ams3",
             "fra1",
             "lon1",
+            "nyc1",
+            "nyc3",
             "sfo3",
             "sgp1"
          ],
@@ -1944,7 +2028,10 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
+            "nyc3",
             "sfo3",
+            "sgp1",
             "tor1"
          ],
          "slug" : "so1_5-24vcpu-192gb",
@@ -1963,8 +2050,9 @@
             "blr1",
             "fra1",
             "lon1",
+            "nyc1",
             "sfo3",
-            "tor1"
+            "sgp1"
          ],
          "slug" : "so-32vcpu-256gb",
          "transfer" : 10,
@@ -1981,6 +2069,8 @@
             "ams3",
             "fra1",
             "lon1",
+            "nyc1",
+            "nyc3",
             "sfo3",
             "sgp1"
          ],
@@ -1996,10 +2086,11 @@
          "price_hourly" : 3.69048,
          "price_monthly" : 2480,
          "regions" : [
-            "ams3",
             "blr1",
-            "lon1",
-            "tor1"
+            "fra1",
+            "nyc1",
+            "sfo3",
+            "sgp1"
          ],
          "slug" : "so1_5-32vcpu-256gb",
          "transfer" : 10,
