@@ -7,3 +7,4 @@ dist
 kubeconfig
 deploy.yaml
 eezhee-sha256sum.sha
+data/process_files

@@ -1,0 +1,1 @@
+go build -o process_files
