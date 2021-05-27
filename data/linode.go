@@ -25,7 +25,11 @@ func (l *LinodeImporter) FindUbuntuImages() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	images := result["data"].([]interface{})
 
 	fmt.Printf("  images file has %d images\n", len(images))
@@ -91,7 +95,11 @@ func (l *LinodeImporter) ConvertProviderImageSizes() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	sizes := result["data"].([]interface{})
 
 	fmt.Printf("  sizes file has %d sizes\n", len(sizes))
@@ -153,7 +161,11 @@ func (l *LinodeImporter) ConvertProviderRegions() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	regions := result["data"].([]interface{})
 
 	fmt.Printf("  regions file has %d regoins\n", len(regions))

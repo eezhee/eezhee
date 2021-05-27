@@ -26,7 +26,11 @@ func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	images := result["images"].([]interface{})
 
 	fmt.Printf("  images file has %d images\n", len(images))
@@ -82,7 +86,11 @@ func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	sizes := result["sizes"].([]interface{})
 
 	fmt.Printf("  sizes file has %d sizes\n", len(sizes))
@@ -135,7 +143,11 @@ func (do *DigitalOceanImporter) ConvertProviderRegions() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	regions := result["regions"].([]interface{})
 
 	fmt.Printf("  regions file has %d regoins\n", len(regions))
