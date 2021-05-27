@@ -1,0 +1,61 @@
+{
+  "image" : "84780478", 
+  "sizes" : {
+    "s-1vcpu-1gb" : "1cpu1gb",
+    "s-1vcpu-2gb" : "1cpu2gb",
+    "s-2vcpu-2gb" : "2cpu2gb",
+    "s-2vcpu-4gb" : "2cpu4gb",
+    "s-4vcpu-8gb" : "4cpu8gb",
+    "s-8vcpu-16gb" : "8cpu16gb",
+    "s-6vcpu-16gb" : "6cpu16gb",
+    "s-8vcpu-32gb" : "8cpu32gb", 
+    "s-12vcpu-48gb" : "12cpu48g", 
+    "s-16vcpu-64gb" : "16cpu64gb",
+    "s-20vcpu-96gb" : "20cpu96gb", 
+    "s-24vcpu-128gb" : "24cpu128gb",
+    "s-32vcpu-192gb" : "32cpu192gb"
+
+  },
+  "regions" : {
+    "nyc1" : {
+      "country" : "us",
+      "state" : "newyork",
+      "city" : "newyork"
+    },
+    "sfo3" : {
+      "country" : "us",
+      "state" : "california",
+      "city" : "sanfranciso"
+    },
+    "tor1" : {
+      "country" : "ca",
+      "state" : "ontario",
+      "city" : "toronto"
+    },
+    "lon1" : {
+      "country" : "gb",
+      "state" : "london",
+      "city" : "london"
+    },
+    "ams3" : {
+      "country" : "nl",
+      "state" : "northholland",
+      "city" : "amsterdam"
+    },
+    "fra1" : {
+      "country" : "de",
+      "state" : "hesse",
+      "city" : "frankfurt"
+    },
+    "blr1" : {
+      "country" : "in",
+      "state" : "karnataka",
+      "city" : "bangalore"
+    },
+    "sgp1" : {
+      "country" : "sg",
+      "state" : "",
+      "city" : "singapore"
+    }
+  }
+}

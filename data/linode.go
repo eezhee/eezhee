@@ -9,13 +9,14 @@ import (
 )
 
 type LinodeImporter struct {
+	Mappings ProviderMappings
 }
 
 // findUbuntuImages - go through images and find ubuntu base images
-func (do *LinodeImporter) FindUbuntuImages() bool {
+func (l *LinodeImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "linode-images.json"
+	filename := DATA_PATH + "linode-images.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -78,10 +79,10 @@ func (do *LinodeImporter) FindUbuntuImages() bool {
 }
 
 // convertProviderImageSizes will convert a provider json file to eezhee format
-func (do *LinodeImporter) ConvertProviderImageSizes() bool {
+func (l *LinodeImporter) ConvertProviderImageSizes() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "linode-types.json"
+	filename := DATA_PATH + "linode-types.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -140,10 +141,10 @@ func (do *LinodeImporter) ConvertProviderImageSizes() bool {
 }
 
 // convertProviderImageSizes will convert a provider json file to eezhee format
-func (do *LinodeImporter) ConvertProviderRegions() bool {
+func (l *LinodeImporter) ConvertProviderRegions() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "linode-regions.json"
+	filename := DATA_PATH + "linode-regions.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -197,6 +198,29 @@ func (do *LinodeImporter) ConvertProviderRegions() bool {
 	}
 
 	// save eezhee formated data to file
+
+	return true
+}
+
+func (l *LinodeImporter) ReadMappings() bool {
+	// read in the data
+	filename := "./linode-mappings.json"
+	jsonFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Printf("jsonFile.Readfile error: #%v ", err)
+		return false
+	}
+
+	// parse the file
+	err = json.Unmarshal(jsonFile, &l.Mappings)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// use this to process the provider data
+	fmt.Println(l.Mappings.Image)
+	fmt.Println(l.Mappings.Sizes)
 
 	return true
 }
