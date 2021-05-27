@@ -1,0 +1,13 @@
+{
+  "image" : "", 
+  "sizes" : {
+    "vc2-1c-1gb" : "1cpu1gb"
+  },
+  "regions" : {
+    "atl" : {
+      "country" : "us",
+      "state" : "georgia",
+      "city" : "atlanta"
+    }
+  }
+}

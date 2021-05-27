@@ -5,16 +5,41 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
+const DATA_PATH = "./raw/"
+
 var PROVIDERS = []string{"digitalocean", "linode", "vultr"}
-var FILE_TEMPLATES = []string{"-region-mappings.yaml", "-sizes-mapping.yaml"}
+
+// define eezhee sizes
+// small, medium, large, xlarge, huge
+// 1cpu1gb, 2cpu2gb
+
+type LocationInfo struct {
+	Country string `json:"country"`
+	State   string `json:"state"`
+	City    string `json:"city"`
+}
+
+type ProviderMappings struct {
+	Image   string                  `json:"image"`
+	Sizes   map[string]string       `json:"sizes"`
+	Regions map[string]LocationInfo `json:"regions"`
+}
+
+// define eezhee regions
+// us
+//   us-east
+//     us-southeast, us-northeast,
+//   us-central
+//     us-southcentral, us-northcentral,
+//   us-west,
+//     us-northwest, us-southwest
+//  ca
+//    ca-west
+//    ca-central
+//    ca-east
 
 type InstanceSize struct {
 	ID           string `yaml:"id"`
@@ -68,48 +93,48 @@ type ProviderImporter interface {
 	FindUbuntuImages() bool
 	ConvertProviderImageSizes() bool
 	ConvertProviderRegions() bool
+	ReadMappings() bool
 }
 
 // THIS SHOULD GO IN EEZHEE
 // readYAMLFiles
-func readYAMLFiles() {
-	for _, provider := range PROVIDERS {
-		for _, template := range FILE_TEMPLATES {
+// func readYAMLFiles() {
+// 	for _, provider := range PROVIDERS {
+// 		for _, template := range FILE_TEMPLATES {
 
-			filename := "./" + provider + template
-			fmt.Println("filename:", filename)
+// 			filename := "./" + provider + template
+// 			fmt.Println("filename:", filename)
 
-			// read in the yaml
-			yamlFile, err := ioutil.ReadFile(filename)
-			if err != nil {
-				log.Printf("yamlFile.Get err   #%v ", err)
-				continue
-			}
+// 			// read in the yaml
+// 			yamlFile, err := ioutil.ReadFile(filename)
+// 			if err != nil {
+// 				log.Printf("yamlFile.Get err   #%v ", err)
+// 				continue
+// 			}
 
-			var providerRegions Regions
-			var providerSizes InstanceSizes
+// 			var providerRegions Regions
+// 			var providerSizes InstanceSizes
 
-			if strings.Contains(filename, "region") {
-				// regions
-				err = yaml.Unmarshal(yamlFile, providerRegions)
-				if err != nil {
-					log.Fatalf("Unmarshal: %v", err)
-				}
-				fmt.Println("  ", providerRegions)
-			} else {
-				// sizes
-				err = yaml.Unmarshal(yamlFile, providerSizes)
-				if err != nil {
-					log.Fatalf("Unmarshal: %v", err)
-				}
-				fmt.Println("  ", providerSizes)
-			}
+// 			if strings.Contains(filename, "region") {
+// 				// regions
+// 				err = yaml.Unmarshal(yamlFile, providerRegions)
+// 				if err != nil {
+// 					log.Fatalf("Unmarshal: %v", err)
+// 				}
+// 				fmt.Println("  ", providerRegions)
+// 			} else {
+// 				// sizes
+// 				err = yaml.Unmarshal(yamlFile, providerSizes)
+// 				if err != nil {
+// 					log.Fatalf("Unmarshal: %v", err)
+// 				}
+// 				fmt.Println("  ", providerSizes)
+// 			}
 
-		}
-	}
-	// try to use
-
-}
+// 		}
+// 	}
+// try to use
+// }
 
 // main
 func main() {
@@ -143,6 +168,11 @@ func main() {
 	}
 
 	// don't really need to process this as ubuntu image id hard coded
+	success := importer.ReadMappings()
+	if success == false {
+		os.Exit(1)
+	}
+	os.Exit(0)
 	importer.FindUbuntuImages()
 	importer.ConvertProviderImageSizes()
 	importer.ConvertProviderRegions()

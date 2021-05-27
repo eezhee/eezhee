@@ -10,13 +10,14 @@ import (
 )
 
 type DigitalOceanImporter struct {
+	Mappings ProviderMappings
 }
 
 // findUbuntuImages - go through images and find ubuntu base images
 func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "digitalocean-images.json"
+	filename := DATA_PATH + "digitalocean-images.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -72,7 +73,7 @@ func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "digitalocean-sizes.json"
+	filename := DATA_PATH + "digitalocean-sizes.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -124,8 +125,8 @@ func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 // convertProviderImageSizes will convert a provider json file to eezhee format
 func (do *DigitalOceanImporter) ConvertProviderRegions() bool {
 
-	// read in the yaml
-	filename := "./raw/" + "digitalocean-regions.json"
+	// read in the data
+	filename := DATA_PATH + "digitalocean-regions.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -162,6 +163,29 @@ func (do *DigitalOceanImporter) ConvertProviderRegions() bool {
 	}
 
 	// save eezhee formated data to file
+
+	return true
+}
+
+func (do *DigitalOceanImporter) ReadMappings() bool {
+
+	// read in the data
+	filename := "./digitalocean-mappings.json"
+	jsonFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Printf("jsonFile.Readfile error: #%v ", err)
+		return false
+	}
+
+	// parse the file
+	err = json.Unmarshal(jsonFile, &do.Mappings)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// use this to process the provider data
+	fmt.Println(do.Mappings.Image)
 
 	return true
 }

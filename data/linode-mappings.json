@@ -1,0 +1,13 @@
+{
+  "image" : "", 
+  "sizes" : {
+    "g6-nanode-1" : "1cpu1gb"
+  },
+  "regions" : {
+    "us-central" : {
+      "country" : "us",
+      "state" : "texas",
+      "city" : "dallas"
+    }
+  }
+}

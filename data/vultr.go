@@ -8,13 +8,14 @@ import (
 )
 
 type VultrImporter struct {
+	Mappings ProviderMappings
 }
 
 // findUbuntuImages - go through images and find ubuntu base images
-func (do *VultrImporter) FindUbuntuImages() bool {
+func (v *VultrImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "vultr-os.json"
+	filename := DATA_PATH + "vultr-os.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -60,10 +61,10 @@ func (do *VultrImporter) FindUbuntuImages() bool {
 }
 
 // convertProviderImageSizes will convert a provider json file to eezhee format
-func (do *VultrImporter) ConvertProviderImageSizes() bool {
+func (v *VultrImporter) ConvertProviderImageSizes() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "vultr-plans.json"
+	filename := DATA_PATH + "vultr-plans.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -110,10 +111,10 @@ func (do *VultrImporter) ConvertProviderImageSizes() bool {
 }
 
 // convertProviderImageSizes will convert a provider json file to eezhee format
-func (do *VultrImporter) ConvertProviderRegions() bool {
+func (v *VultrImporter) ConvertProviderRegions() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "vultr-regions.json"
+	filename := DATA_PATH + "vultr-regions.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -152,6 +153,29 @@ func (do *VultrImporter) ConvertProviderRegions() bool {
 	}
 
 	// save eezhee formated data to file
+
+	return true
+}
+
+func (v *VultrImporter) ReadMappings() bool {
+	// read in the data
+	filename := "./vultr-mappings.json"
+	jsonFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Printf("jsonFile.Readfile error: #%v ", err)
+		return false
+	}
+
+	// parse the file
+	err = json.Unmarshal(jsonFile, &v.Mappings)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	// use this to process the provider data
+	fmt.Println(v.Mappings.Image)
+	fmt.Println(v.Mappings.Sizes)
 
 	return true
 }
