@@ -91,25 +91,28 @@ func (v *VultrImporter) ConvertProviderImageSizes() bool {
 		sizeInfo := size.(map[string]interface{})
 
 		id := sizeInfo["id"].(string)
+		_, sizeToBeMapped := v.Mappings.Sizes[id]
+		if sizeToBeMapped {
+			processors := int(sizeInfo["vcpu_count"].(float64))
+			memory := int(sizeInfo["ram"].(float64) / 1024)
+			disk := int(sizeInfo["disk"].(float64))
+			// transfer := int(sizeInfo["bandwidth"].(float64))
+			// "disk_count" : 1,
+			// "locations" : [
+			// 	 "sgp"
+			// ],
+			// "monthly_cost" : 5,
+			// "type" : "vc2",
 
-		processors := int(sizeInfo["vcpu_count"].(float64))
-		memory := int(sizeInfo["ram"].(float64) / 1024)
-		disk := int(sizeInfo["disk"].(float64))
-		// transfer := int(sizeInfo["bandwidth"].(float64))
-		// "disk_count" : 1,
-		// "locations" : [
-		// 	 "sgp"
-		// ],
-		// "monthly_cost" : 5,
-		// "type" : "vc2",
+			// get a list of all fields
+			// for key, value := range sizeInfo {
+			// 	fmt.Println(key, ": ", value)
+			// }
 
-		// get a list of all fields
-		// for key, value := range sizeInfo {
-		// 	fmt.Println(key, ": ", value)
-		// }
+			// convert to eezhee format
+			fmt.Printf("    %s: (cpu: %d mem: %d disk: %d)\n", id, processors, memory, disk)
 
-		// convert to eezhee format
-		fmt.Printf("    %s: (cpu: %d mem: %d disk: %d)\n", id, processors, memory, disk)
+		}
 
 	}
 
@@ -138,30 +141,34 @@ func (v *VultrImporter) ConvertProviderRegions() bool {
 	}
 	regions := result["regions"].([]interface{})
 
-	fmt.Printf("  regions file has %d regoins\n", len(regions))
+	fmt.Printf("  regions file has %d regions\n", len(regions))
 
 	for _, region := range regions {
 
 		regionInfo := region.(map[string]interface{})
 
 		id := regionInfo["id"].(string)
+		_, regionToBeMapped := v.Mappings.Regions[id]
+		if regionToBeMapped {
 
-		city := regionInfo["city"].(string)
-		country := regionInfo["country"].(string)
-		continent := regionInfo["continent"].(string)
+			city := regionInfo["city"].(string)
+			country := regionInfo["country"].(string)
+			continent := regionInfo["continent"].(string)
 
-		fmt.Printf("    %s (%s, %s, %s)\n", id, city, country, continent)
+			fmt.Printf("    %s (%s, %s, %s)\n", id, city, country, continent)
 
-		// "options" : [
-		// 	 "ddos_protection"
-		// ]
+			// "options" : [
+			// 	 "ddos_protection"
+			// ]
 
-		// get a list of all fields
-		// for key, value := range regionInfo {
-		// 	fmt.Println(key, ": ", value)
-		// }
+			// get a list of all fields
+			// for key, value := range regionInfo {
+			// 	fmt.Println(key, ": ", value)
+			// }
 
-		// convert to eezhee format
+			// convert to eezhee format
+
+		}
 	}
 
 	// save eezhee formated data to file
@@ -169,6 +176,8 @@ func (v *VultrImporter) ConvertProviderRegions() bool {
 	return true
 }
 
+// ReadMappings will load the json file with mappings between Vultr's size & regions
+// and Eezhee's
 func (v *VultrImporter) ReadMappings() bool {
 	// read in the data
 	filename := "./vultr-mappings.json"
@@ -186,8 +195,8 @@ func (v *VultrImporter) ReadMappings() bool {
 	}
 
 	// use this to process the provider data
-	fmt.Println(v.Mappings.Image)
-	fmt.Println(v.Mappings.Sizes)
+	// fmt.Println(v.Mappings.Image)
+	// fmt.Println(v.Mappings.Sizes)
 
 	return true
 }

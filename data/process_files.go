@@ -143,14 +143,17 @@ func main() {
 	processDigitalOcean := flag.Bool("digitalocean", false, "process digitalocean files")
 	processLinode := flag.Bool("linode", false, "process linode files")
 	processVultr := flag.Bool("vultr", false, "process vultr files")
+	findUbuntuImages := flag.Bool("listUbuntuImages", false, "list ubuntu images (no file processing)")
+
 	flag.Parse()
 
+	// make sure at least one is set
 	if !*processDigitalOcean && !*processLinode && !*processVultr {
 		fmt.Println("no provider specified.  see `process_files -h` for more details")
 		os.Exit(1)
 	}
 
-	// make sure at least one is set
+	// create the importer we want to use
 	var importer ProviderImporter
 	if *processDigitalOcean {
 
@@ -167,14 +170,27 @@ func main() {
 		importer = new(VultrImporter)
 	}
 
-	// don't really need to process this as ubuntu image id hard coded
-	success := importer.ReadMappings()
-	if !success {
-		os.Exit(1)
+	if *findUbuntuImages {
+		// don't really need to go through images as mappings already has
+		// which one to use when creating a VM
+		importer.FindUbuntuImages()
+
+	} else {
+		// only go through images and show which are ubuntu
+		// this is a special mode so can set correct image in mappings
+		success := importer.ReadMappings()
+		if !success {
+			os.Exit(1)
+		}
+
+		// go through provider VM sizes and filter for ones that
+		// we will support
+		importer.ConvertProviderImageSizes()
+
+		// go through provider regions and filter for ones that
+		// we will support
+		importer.ConvertProviderRegions()
+
 	}
-	os.Exit(0)
-	importer.FindUbuntuImages()
-	importer.ConvertProviderImageSizes()
-	importer.ConvertProviderRegions()
 
 }
