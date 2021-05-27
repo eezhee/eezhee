@@ -14,6 +14,7 @@ type DigitalOceanImporter struct {
 }
 
 // findUbuntuImages - go through images and find ubuntu base images
+// this can be used to find the image that Eezhee should use to build VMs
 func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
@@ -60,13 +61,12 @@ func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 				// distribution := imageInfo["distribution"].(string)
 				fmt.Printf("    ID: %-9s  Slug: %-20s  Name: %-20s   Created: %s\n", imageID, slug, imageName, createdAt)
 
-				// get a list of all fields
+				// get a list of all fields - for debugging only
 				// for key, value := range imageInfo {
 				// 	// regions
 				// 	fmt.Println(key, ": ", value)
 				// }
 			}
-
 		}
 	}
 
@@ -76,7 +76,7 @@ func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 // convertProviderImageSizes will convert a provider json file to eezhee format
 func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 
-	// read in the yaml
+	// read in the raw data
 	filename := DATA_PATH + "digitalocean-sizes.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -95,34 +95,38 @@ func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 
 	fmt.Printf("  sizes file has %d sizes\n", len(sizes))
 
+	// go through each VM size and filter out just the ones that Eezhee
+	// supports.  Use the Mappings structure to do so
 	for _, size := range sizes {
 
+		// get basic info on this VM size
 		sizeInfo := size.(map[string]interface{})
-		slug := sizeInfo["slug"].(string)
+
+		// can new VMs be made with this size?
 		available := sizeInfo["available"].(bool)
-		if available {
+		if !available {
+			// fmt.Printf("    %s is not available\n", slug)
+			continue
+		}
+
+		// is this size one we want to support
+		slug := sizeInfo["slug"].(string)
+		_, sizeToBeMapped := do.Mappings.Sizes[slug]
+		if sizeToBeMapped {
 
 			processors := int(sizeInfo["vcpus"].(float64))
 			memory := int(sizeInfo["memory"].(float64) / 1024)
 			disk := int(sizeInfo["disk"].(float64))
-			// transfer := int(sizeInfo["transfer"].(float64))
-			// description := sizeInfo["description"].(string)
+			transfer := int(sizeInfo["transfer"].(float64))
+			description := sizeInfo["description"].(string)
+			price_hourly := sizeInfo["price_hourly"].(float64)
+			price_monthly := sizeInfo["price_monthly"].(float64)
 			// regions
-			// price_hourly
-			// price_monthly
-
-			// get a list of all fields
-			// for key, value := range sizeInfo {
-			// 	fmt.Println(key, ": ", value)
-			// }
 
 			// convert to eezhee format
-			fmt.Printf("    %s: (cpu: %d mem: %d disk: %d)\n", slug, processors, memory, disk)
-
-		} else {
-			fmt.Printf("    %s is not available\n", slug)
+			fmt.Printf("    %s: (cpu: %d mem: %d disk: %d xfer: %d)\n", slug, processors, memory, disk, transfer)
+			fmt.Printf("        (descr: %s $/hr: %v $/mth: %v)\n", description, price_hourly, price_monthly)
 		}
-
 	}
 
 	// save eezhee formated data to file
@@ -133,7 +137,7 @@ func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 // convertProviderImageSizes will convert a provider json file to eezhee format
 func (do *DigitalOceanImporter) ConvertProviderRegions() bool {
 
-	// read in the data
+	// read in the raw data
 	filename := DATA_PATH + "digitalocean-regions.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -152,26 +156,29 @@ func (do *DigitalOceanImporter) ConvertProviderRegions() bool {
 
 	fmt.Printf("  regions file has %d regoins\n", len(regions))
 
+	// go through each region and filter out just the ones that Eezhee
+	// supports.  Use the Mappings structure to do so
 	for _, region := range regions {
 
 		regionInfo := region.(map[string]interface{})
+
+		// only look at regions provider says are available
 		available := regionInfo["available"].(bool)
 		if available {
+
+			// check if we should use this region
 			slug := regionInfo["slug"].(string)
-			name := regionInfo["name"].(string)
+			_, regionToBeMapped := do.Mappings.Regions[slug]
+			if regionToBeMapped {
 
-			// sizes
-			// features
-			fmt.Printf("    %s (%s)\n", slug, name)
+				name := regionInfo["name"].(string)
+				// sizes
+				// features
+				fmt.Printf("    %s (%s)\n", slug, name)
 
-			// get a list of all fields
-			// for key, value := range regionInfo {
-			// 	fmt.Println(key, ": ", value)
-			// }
-
+				// convert to eezhee format
+			}
 		}
-
-		// convert to eezhee format
 	}
 
 	// save eezhee formated data to file
