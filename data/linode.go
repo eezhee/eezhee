@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strconv"
 	"strings"
 )
 
@@ -26,34 +25,44 @@ func (do *LinodeImporter) FindUbuntuImages() bool {
 	// parse the file
 	var result map[string]interface{}
 	json.Unmarshal([]byte(jsonFile), &result)
-	images := result["images"].([]interface{})
+	images := result["data"].([]interface{})
 
 	fmt.Printf("  images file has %d images\n", len(images))
 	for _, image := range images {
 
+		// "deprecated" : false,
+		// "is_public" : true,
+		// "vendor" : "Alpine"
+		// "id" : "linode/alpine3.10",
+		// "label" : "Alpine 3.10",
+
+		// "created" : "2019-06-20T17:17:11",
+		// "created_by" : "linode",
+		// "description" : "",
+		// "eol" : "2021-05-01T04:00:00",
+		// "expiry" : null,
+		// "size" : 300,
+		// "type" : "manual",
+
 		imageInfo := image.(map[string]interface{})
-		status := imageInfo["status"].(string)
-		public := imageInfo["public"].(bool)
+
+		deprecated := imageInfo["deprecated"].(bool)
+		is_public := imageInfo["is_public"].(bool)
 
 		// only care about images that are available
-		if (status == "available") && public {
-
-			// skip bad slug names
-			if imageInfo["slug"] == nil {
-				// shouldn't really happen but DO files sometimes have slug set to 'null'
-				continue
-			}
+		if is_public && !deprecated {
 
 			// only want Ubuntu based distributions
-			slug := imageInfo["slug"].(string)
-			if strings.HasPrefix(slug, "ubuntu") {
+			vendor := imageInfo["vendor"].(string)
+			if strings.Compare(vendor, "Ubuntu") == 0 {
 
-				imageName := imageInfo["name"].(string)
-				imageID := strconv.FormatFloat(imageInfo["id"].(float64), 'f', 0, 64)
+				id := imageInfo["id"].(string)
+				label := imageInfo["label"].(string)
+
 				// description := imageInfo["description"].(string)
-				createdAt := imageInfo["created_at"].(string)
+				// createdAt := imageInfo["created_at"].(string)
 				// distribution := imageInfo["distribution"].(string)
-				fmt.Printf("    ID: %-9s  Slug: %-20s  Name: %-20s   Created: %s\n", imageID, slug, imageName, createdAt)
+				fmt.Printf("    ID: %-9s  Label: %-20s\n", id, label)
 
 				// get a list of all fields
 				// for key, value := range imageInfo {
@@ -72,7 +81,7 @@ func (do *LinodeImporter) FindUbuntuImages() bool {
 func (do *LinodeImporter) ConvertProviderImageSizes() bool {
 
 	// read in the yaml
-	filename := "./raw/" + "linode-sizes.json"
+	filename := "./raw/" + "linode-types.json"
 	jsonFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
@@ -82,37 +91,46 @@ func (do *LinodeImporter) ConvertProviderImageSizes() bool {
 	// parse the file
 	var result map[string]interface{}
 	json.Unmarshal([]byte(jsonFile), &result)
-	sizes := result["sizes"].([]interface{})
+	sizes := result["data"].([]interface{})
 
 	fmt.Printf("  sizes file has %d sizes\n", len(sizes))
 
 	for _, size := range sizes {
 
 		sizeInfo := size.(map[string]interface{})
-		slug := sizeInfo["slug"].(string)
-		available := sizeInfo["available"].(bool)
-		if available {
 
-			processors := int(sizeInfo["vcpus"].(float64))
-			memory := int(sizeInfo["memory"].(float64) / 1024)
-			disk := int(sizeInfo["disk"].(float64))
-			// transfer := int(sizeInfo["transfer"].(float64))
-			// description := sizeInfo["description"].(string)
-			// regions
-			// price_hourly
-			// price_monthly
+		id := sizeInfo["id"].(string)
+		label := sizeInfo["label"].(string)
 
-			// get a list of all fields
-			// for key, value := range sizeInfo {
-			// 	fmt.Println(key, ": ", value)
-			// }
+		processors := int(sizeInfo["vcpus"].(float64))
+		memory := int(sizeInfo["memory"].(float64) / 1024)
+		disk := int(sizeInfo["disk"].(float64) / 1024)
+		// transfer := int(sizeInfo["transfer"].(float64) / 1000)
 
-			// convert to eezhee format
-			fmt.Printf("    %s: (cpu: %d mem: %d disk: %d)\n", slug, processors, memory, disk)
+		//  "network_out" : 1000,
+		// 	"addons" : {
+		// 		"backups" : {
+		// 			 "price" : {
+		// 					"hourly" : 0.003,
+		// 					"monthly" : 2
+		// 			 }
+		// 		}
+		//  },
+		//  "class" : "nanode",
+		//  "gpus" : 0,
+		//  "price" : {
+		// 		"hourly" : 0.0075,
+		// 		"monthly" : 5
+		//  },
+		//  "successor" : null,
 
-		} else {
-			fmt.Printf("    %s is not available\n", slug)
-		}
+		// get a list of all fields
+		// for key, value := range sizeInfo {
+		// 	fmt.Println(key, ": ", value)
+		// }
+
+		// convert to eezhee format
+		fmt.Printf("    %s(%s): (cpu: %d mem: %d disk: %d)\n", id, label, processors, memory, disk)
 
 	}
 
@@ -135,21 +153,38 @@ func (do *LinodeImporter) ConvertProviderRegions() bool {
 	// parse the file
 	var result map[string]interface{}
 	json.Unmarshal([]byte(jsonFile), &result)
-	regions := result["regions"].([]interface{})
+	regions := result["data"].([]interface{})
 
 	fmt.Printf("  regions file has %d regoins\n", len(regions))
 
 	for _, region := range regions {
 
 		regionInfo := region.(map[string]interface{})
-		available := regionInfo["available"].(bool)
-		if available {
-			slug := regionInfo["slug"].(string)
-			name := regionInfo["name"].(string)
 
-			// sizes
-			// features
-			fmt.Printf("    %s (%s)\n", slug, name)
+		//  "country" : "in",
+		//  "id" : "ap-west",
+		//  "status" : "ok"
+
+		// 	"capabilities" : [
+		// 		"Linodes",
+		// 		"NodeBalancers",
+		// 		"Block Storage",
+		// 		"GPU Linodes",
+		// 		"Kubernetes",
+		// 		"Cloud Firewall"
+		//  ],
+		//  "resolvers" : {
+		// 		"ipv4" : "172.105.34.5,172.105.35.5,172.105.36.5,172.105.37.5,172.105.38.5,172.105.39.5,172.105.40.5,172.105.41.5,172.105.42.5,172.105.43.5",
+		// 		"ipv6" : "2400:8904::f03c:91ff:fea5:659,2400:8904::f03c:91ff:fea5:9282,2400:8904::f03c:91ff:fea5:b9b3,2400:8904::f03c:91ff:fea5:925a,2400:8904::f03c:91ff:fea5:22cb,2400:8904::f03c:91ff:fea5:227a,2400:8904::f03c:91ff:fea5:924c,2400:8904::f03c:91ff:fea5:f7e2,2400:8904::f03c:91ff:fea5:2205,2400:8904::f03c:91ff:fea5:9207"
+		//  },
+
+		status := regionInfo["status"].(string)
+		if status == "ok" {
+
+			id := regionInfo["id"].(string)
+			country := regionInfo["country"].(string)
+
+			fmt.Printf("    %s (%s)\n", id, country)
 
 			// get a list of all fields
 			// for key, value := range regionInfo {
