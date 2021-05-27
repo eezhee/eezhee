@@ -10,7 +10,7 @@ import (
 
 const DATA_PATH = "./raw/"
 
-var PROVIDERS = []string{"digitalocean", "linode", "vultr"}
+// var PROVIDERS = []string{"digitalocean", "linode", "vultr"}
 
 // define eezhee sizes
 // small, medium, large, xlarge, huge
@@ -41,53 +41,53 @@ type ProviderMappings struct {
 //    ca-central
 //    ca-east
 
-type InstanceSize struct {
-	ID           string `yaml:"id"`
-	Name         string `yaml:"name"`
-	ProviderID   string `yaml:"provider_id"`
-	ProviderName string `yaml:"provider_name"`
-	CPUs         int    `yaml:"cpus"`
-	Memory       int    `yaml:"memory"`
-	Disk         int    `yaml:"disk"`
-	Transfer     int    `yaml:"transfer"`
-	Price        int    `yaml:"price"`
-}
+// type InstanceSize struct {
+// 	ID           string `yaml:"id"`
+// 	Name         string `yaml:"name"`
+// 	ProviderID   string `yaml:"provider_id"`
+// 	ProviderName string `yaml:"provider_name"`
+// 	CPUs         int    `yaml:"cpus"`
+// 	Memory       int    `yaml:"memory"`
+// 	Disk         int    `yaml:"disk"`
+// 	Transfer     int    `yaml:"transfer"`
+// 	Price        int    `yaml:"price"`
+// }
 
-type InstanceSizes []InstanceSize
+// type InstanceSizes []InstanceSize
 
-type Region struct {
-	ID           int    `yaml:"id"`
-	Name         string `yaml:"name"`
-	ProviderID   int    `yaml:"provider_id"`
-	ProviderName string `yaml:"provider_name"`
-	// country       string
-	// state         string
-	// city          string
-	// lat           float32
-	// long          float32
-}
+// type Region struct {
+// 	ID           int    `yaml:"id"`
+// 	Name         string `yaml:"name"`
+// 	ProviderID   int    `yaml:"provider_id"`
+// 	ProviderName string `yaml:"provider_name"`
+// 	// country       string
+// 	// state         string
+// 	// city          string
+// 	// lat           float32
+// 	// long          float32
+// }
 
-type Regions []Region
+// type Regions []Region
 
 // ListRegions returns a list of all regions for a provider
-func ListRegions() []Regions {
-	var cloudRegions []Regions
+// func ListRegions() []Regions {
+// 	var cloudRegions []Regions
 
-	// load the list of regions
+// 	// load the list of regions
 
-	return cloudRegions
-}
+// 	return cloudRegions
+// }
 
 // ListClostest will return the given number of closest regions
 // in order (of which is closest)
-func ListClosest(user_lat float32, user_long float32, number int) {
+// func ListClosest(user_lat float32, user_long float32, number int) {
 
-}
+// }
 
 // GetRegionDetails will return details about given region
-func GetRegionDetails(cloud_id int) {
+// func GetRegionDetails(cloud_id int) {
 
-}
+// }
 
 type ProviderImporter interface {
 	FindUbuntuImages() bool
@@ -169,7 +169,7 @@ func main() {
 
 	// don't really need to process this as ubuntu image id hard coded
 	success := importer.ReadMappings()
-	if success == false {
+	if !success {
 		os.Exit(1)
 	}
 	os.Exit(0)

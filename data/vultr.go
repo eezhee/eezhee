@@ -24,7 +24,11 @@ func (v *VultrImporter) FindUbuntuImages() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	images := result["os"].([]interface{})
 
 	fmt.Printf("  images file has %d images\n", len(images))
@@ -73,7 +77,11 @@ func (v *VultrImporter) ConvertProviderImageSizes() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	sizes := result["plans"].([]interface{})
 
 	fmt.Printf("  sizes file has %d sizes\n", len(sizes))
@@ -123,7 +131,11 @@ func (v *VultrImporter) ConvertProviderRegions() bool {
 
 	// parse the file
 	var result map[string]interface{}
-	json.Unmarshal([]byte(jsonFile), &result)
+	err = json.Unmarshal([]byte(jsonFile), &result)
+	if err != nil {
+		log.Printf("could not parse %s: #%v ", filename, err)
+		return false
+	}
 	regions := result["regions"].([]interface{})
 
 	fmt.Printf("  regions file has %d regoins\n", len(regions))
