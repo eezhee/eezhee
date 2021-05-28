@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var SupportedClouds = []string{"digitalocean", "linode", "vultr"}
+
 // VMManager is the interface all cloud provider need to follow
 type VMManager interface {
 	FindAuthToken() string
