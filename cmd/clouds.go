@@ -38,8 +38,7 @@ var listCloudsCmd = &cobra.Command{
 
 		// go through each cloud and see if enabled
 		numEnabled := 0
-		clouds := []string{"digitalocean", "linode", "vultr"}
-		for _, cloud := range clouds {
+		for _, cloud := range core.SupportedClouds {
 			_, err := GetManager(cloud)
 			if err == nil {
 				fmt.Println("  ", cloud)

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eezhee/eezhee/pkg/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -24,8 +25,6 @@ var listCmd = &cobra.Command{
 
 func listVMs() {
 
-	clouds := []string{"digitalocean", "linode", "vultr"}
-
 	// // see which cloud we have an api token for
 	// cloud := AppConfig.GetDefaultCloud()
 	// if len(cloud) == 0 {
@@ -36,7 +35,7 @@ func listVMs() {
 
 	numClusters := 0
 
-	for _, cloud := range clouds {
+	for _, cloud := range core.SupportedClouds {
 
 		manager, err := GetManager(cloud)
 		if err != nil {

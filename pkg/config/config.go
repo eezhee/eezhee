@@ -13,10 +13,12 @@ import (
 type AppConfig struct {
 	v                  *viper.Viper // viper object
 	DigitalOceanAPIKey string
-	CloudFlareAPIKey   string
 	LinodeAPIKey       string
 	VultrAPIKey        string
+	CloudFlareAPIKey   string
 	DefaultCloud       string // required if we have more than one api key
+	DefaultVMSize      string
+	DefaultRegion      string
 }
 
 // NewAppConfig will create a new deploy file object
@@ -66,10 +68,13 @@ func (a *AppConfig) Load() error {
 	}
 
 	a.DigitalOceanAPIKey = a.v.GetString("digitalocean-api-key")
-	a.CloudFlareAPIKey = a.v.GetString("cloudflare-api-key")
 	a.LinodeAPIKey = a.v.GetString("linode-api-key")
 	a.VultrAPIKey = a.v.GetString("vultr-api-key")
+	a.CloudFlareAPIKey = a.v.GetString("cloudflare-api-key")
+
 	a.DefaultCloud = a.v.GetString("default-cloud")
+	a.DefaultVMSize = a.v.GetString("default-vmsize")
+	a.DefaultRegion = a.v.GetString("default-region")
 
 	return nil
 }
@@ -78,10 +83,13 @@ func (a *AppConfig) Load() error {
 func (a *AppConfig) Save() error {
 
 	a.v.Set("digitalocean-api-key", a.DigitalOceanAPIKey)
-	a.v.Set("cloudflare-api-key", a.CloudFlareAPIKey)
 	a.v.Set("linode-api-key", a.LinodeAPIKey)
 	a.v.Set("vultr-api-key", a.VultrAPIKey)
+	a.v.Set("cloudflare-api-key", a.CloudFlareAPIKey)
+
 	a.v.Set("default-cloud", a.DefaultCloud)
+	a.v.Set("default-vmsize", a.DefaultVMSize)
+	a.v.Set("default-region", a.DefaultRegion)
 
 	err := a.v.WriteConfig()
 	if err != nil {

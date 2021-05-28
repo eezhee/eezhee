@@ -10,8 +10,6 @@ import (
 
 const DATA_PATH = "./raw/"
 
-// var PROVIDERS = []string{"digitalocean", "linode", "vultr"}
-
 // define eezhee sizes
 // small, medium, large, xlarge, huge
 // 1cpu1gb, 2cpu2gb
