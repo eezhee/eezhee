@@ -2,6 +2,7 @@ package digitalocean
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"os"
@@ -14,6 +15,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
+
+//go:embed digitalocean-mappings.json
+var DigitalOceanMappingsJSON []byte
 
 // ip addresses to use to find closest region
 var regionIPs = []core.IPPingTime{
@@ -37,7 +41,6 @@ var regionIPs = []core.IPPingTime{
 //				"m3-2vcpu-16gb","m3-4vcpu-32gb","m3-8vcpu-64gb","m3-16vcpu-128gb","m3-24vcpu-192gb","m3-32vcpu-256gb",
 //				"m6-2vcpu-16gb","m6-4vcpu-32gb","m6-8vcpu-64gb","m6-16vcpu-128gb","m6-24vcpu-192gb","m6-32vcpu-256gb"
 //        "c-2","c2-2vcpu-4gb","c-4","c2-4vpcu-8gb","c-8","c2-8vpcu-16gb","c-16","c2-16vcpu-32gb","c-32","c2-32vpcu-64gb",
-// images:  no need as we always want to be on the same plain Ubuntu box
 
 // TODO: the way to manage sizes is on a 3 (or more dimensional plane).  User decides what they want to increase and we figure out the right VM upgrade
 
@@ -68,7 +71,7 @@ func NewManager(providerAPIToken string) (core.VMManager, error) {
 	return manager, nil
 }
 
-// GetAuthToken will check common place for digitalocean api key
+// FindAuthToken will check common place for digitalocean api key
 func (m *Manager) FindAuthToken() string {
 
 	accessToken := ""
@@ -100,6 +103,107 @@ func (m *Manager) FindAuthToken() string {
 	}
 
 	return accessToken
+}
+
+// GetRegions will return all the regions that Eezhee can use
+func (m *Manager) GetRegions() ([]string, error) {
+
+	list := []string{}
+
+	// get mappings from DO format to Eezhee format
+	mappings, err := core.ParseProviderMappings(DigitalOceanMappingsJSON)
+	if err != nil {
+		return list, err
+	}
+
+	// go through regions
+	ctx := context.Background()
+	for {
+
+		// get regions
+		page := 1
+		regions, resp, err := m.api.Regions.List(ctx, &godo.ListOptions{Page: page})
+		if err != nil {
+			return list, err
+		}
+
+		// go through regions and compare to our mapping
+		for _, region := range regions {
+
+			// is region supported
+			mapping, ok := mappings.Regions[region.Slug]
+			if ok {
+
+				// convert from DO_region to EZ_region
+				// output both our name(s) and DO name
+				// do we need resp.  has links and meta fields
+				var alternates = make([]string, 0)
+				alternates = append(alternates, mapping.Country)
+				if len(mapping.Region) > 0 {
+					alternates = append(alternates, mapping.Country+"-"+mapping.Region)
+				}
+				if len(mapping.State) > 0 {
+					alternates = append(alternates, mapping.Country+"-"+mapping.State)
+				}
+				fmt.Printf("%s: %s (%s)\n", mapping.City, alternates, region.Slug)
+
+			}
+		}
+
+		// see if there are more pages
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		} else {
+			page = page + 1
+		}
+
+	}
+
+	return list, nil
+}
+
+// GetSizes will return all the VM sizes that DO has (and that Eezhee can use)
+func (m *Manager) GetVMSizes() ([]string, error) {
+
+	list := []string{}
+
+	// get mappings from DO format to Eezhee format
+	mappings, err := core.ParseProviderMappings(DigitalOceanMappingsJSON)
+	if err != nil {
+		return list, err
+	}
+
+	// go through regions
+	ctx := context.Background()
+	page := 1
+	for {
+
+		// get regions
+		sizes, resp, err := m.api.Sizes.List(ctx, &godo.ListOptions{Page: page})
+		if err != nil {
+			return list, err
+		}
+
+		// go through regions and compare to our mapping
+		for _, size := range sizes {
+
+			// is region supported
+			name, ok := mappings.VMSizes[size.Slug]
+			if ok {
+				fmt.Printf("%s: disk: %vGB xfer: %vTB (%s) \n", name, size.Disk, size.Transfer, size.Slug)
+			}
+		}
+
+		// see if there are more pages
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		} else {
+			page = page + 1
+		}
+
+	}
+
+	return list, nil
 }
 
 // IsSSHKeyUploaded checks if ssh key already uploaded to DigitalOcean

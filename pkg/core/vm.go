@@ -10,14 +10,15 @@ var SupportedClouds = []string{"digitalocean", "linode", "vultr"}
 // VMManager is the interface all cloud provider need to follow
 type VMManager interface {
 	FindAuthToken() string
+	GetRegions() (regionList []string, err error)
+	GetVMSizes() (vmSizeList []string, err error)
+	SelectClosestRegion() (closestRegion string, err error)
 	ListVMs() (vmInfo []VMInfo, err error)
 	CreateVM(name string, image string, size string, region string, sshKey SSHKey) (VMInfo, error)
 	GetVMInfo(vmID string) (vmInfo VMInfo, err error)
 	DeleteVM(ID string) error
-	// UploadSSHKey()
 	IsSSHKeyUploaded(sshKey SSHKey) (string, error)
 	UploadSSHKey(keyName string, sshKey SSHKey) (string, error)
-	SelectClosestRegion() (closestRegion string, err error)
 }
 
 // Regions has details about all the regions a provider supports

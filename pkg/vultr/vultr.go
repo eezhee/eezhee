@@ -133,6 +133,20 @@ func (m *Manager) FindAuthToken() string {
 	return token
 }
 
+// GetRegions will return details on regions eezhee can use
+func (m *Manager) GetRegions() ([]string, error) {
+
+	list := []string{}
+	return list, nil
+}
+
+// GetVMSizes will return details on regions eezhee can use
+func (m *Manager) GetVMSizes() ([]string, error) {
+
+	list := []string{}
+	return list, nil
+}
+
 // IsSSHKeyUploaded checks if ssh key already uploaded to Vultr
 func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err error) {
 

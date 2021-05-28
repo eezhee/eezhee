@@ -60,9 +60,9 @@ func (s *DeployState) Load() error {
 		return err
 	}
 
+	s.Name = s.v.GetString("name")
 	s.Cloud = s.v.GetString("cloud")
 	s.ID = s.v.GetString("id")
-	s.Name = s.v.GetString("name")
 	s.Region = s.v.GetString("region")
 	s.Size = s.v.GetString("size")
 	s.IP = s.v.GetString("ip")
@@ -76,9 +76,9 @@ func (s *DeployState) Load() error {
 func (s *DeployState) Save() error {
 
 	// move all our state variables over to viper
+	s.v.Set("name", s.Name)
 	s.v.Set("cloud", s.Cloud)
 	s.v.Set("id", s.ID)
-	s.v.Set("name", s.Name)
 	s.v.Set("region", s.Region)
 	s.v.Set("size", s.Size)
 	s.v.Set("ip", s.IP)

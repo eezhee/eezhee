@@ -78,6 +78,20 @@ func (m *Manager) IsSSHKeyUploaded(desiredSSHKey core.SSHKey) (keyID string, err
 	return "", err
 }
 
+// GetRegions will return details on regions eezhee can use
+func (m *Manager) GetRegions() ([]string, error) {
+
+	list := []string{}
+	return list, nil
+}
+
+// GetVMSizes will return details on regions eezhee can use
+func (m *Manager) GetVMSizes() ([]string, error) {
+
+	list := []string{}
+	return list, nil
+}
+
 // UploadSSHKey will upload a given ssh key to AWS
 func (m *Manager) UploadSSHKey(keyName string, sshKey core.SSHKey) (keyID string, err error) {
 
