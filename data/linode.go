@@ -12,7 +12,7 @@ type LinodeImporter struct {
 	Mappings ProviderMappings
 }
 
-// findUbuntuImages - go through images and find ubuntu base images
+// findUbuntuImages - go through list of images from linode API find ubuntu base images
 func (l *LinodeImporter) FindUbuntuImages() bool {
 
 	// read in the yaml

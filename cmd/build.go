@@ -159,7 +159,16 @@ func buildCluster() error {
 	}
 
 	// TODO - allow config to specify size/type
+
 	// TODO - translate generic size/type to provider specific
+	// take region from config convert to actual
+	// us -> match country
+	// us-region -> match country and region (east/west/central.  know that east can southeast or northeast)
+	// us-state
+	// city
+
+	// function to list sizes and regions available by provider
+
 	var imageName string
 	switch deployConfig.Cloud {
 	case "digitalocean":

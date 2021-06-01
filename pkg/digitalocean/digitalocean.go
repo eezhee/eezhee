@@ -145,7 +145,7 @@ func (m *Manager) GetRegions() ([]string, error) {
 				if len(mapping.State) > 0 {
 					alternates = append(alternates, mapping.Country+"-"+mapping.State)
 				}
-				fmt.Printf("%s: %s (%s)\n", mapping.City, alternates, region.Slug)
+				fmt.Printf("  %s: %s (%s)\n", mapping.City, alternates, region.Slug)
 
 			}
 		}
@@ -190,7 +190,7 @@ func (m *Manager) GetVMSizes() ([]string, error) {
 			// is region supported
 			name, ok := mappings.VMSizes[size.Slug]
 			if ok {
-				fmt.Printf("%s: disk: %vGB xfer: %vTB (%s) \n", name, size.Disk, size.Transfer, size.Slug)
+				fmt.Printf("  %s: disk: %vGB xfer: %vTB (%s) \n", name, size.Disk, size.Transfer, size.Slug)
 			}
 		}
 
