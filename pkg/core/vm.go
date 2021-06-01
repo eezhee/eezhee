@@ -11,42 +11,42 @@ var SupportedClouds = []string{"digitalocean", "linode", "vultr"}
 type VMManager interface {
 	FindAuthToken() string
 	GetRegions() (regionList []string, err error)
-	GetVMSizes() (vmSizeList []string, err error)
 	SelectClosestRegion() (closestRegion string, err error)
-	ListVMs() (vmInfo []VMInfo, err error)
+	GetVMSizes() (vmSizeList []string, err error)
 	CreateVM(name string, image string, size string, region string, sshKey SSHKey) (VMInfo, error)
 	GetVMInfo(vmID string) (vmInfo VMInfo, err error)
 	DeleteVM(ID string) error
+	ListVMs() (vmInfo []VMInfo, err error)
 	IsSSHKeyUploaded(sshKey SSHKey) (string, error)
 	UploadSSHKey(keyName string, sshKey SSHKey) (string, error)
 }
 
 // Regions has details about all the regions a provider supports
-type Regions interface {
-	GetList() ([]RegionInfo, error)
-	GetClosestByPing() ([]RegionInfo, error)
-	GetClosestByLatLong(lat float32, long float32) ([]RegionInfo, error)
-	GetClosestByCountry(country string) ([]RegionInfo, error)
-}
+// type Regions interface {
+// 	GetList() ([]RegionInfo, error)
+// 	GetClosestByPing() ([]RegionInfo, error)
+// 	GetClosestByLatLong(lat float32, long float32) ([]RegionInfo, error)
+// 	GetClosestByCountry(country string) ([]RegionInfo, error)
+// }
 
 // RegionInfo has details about a given datacenter/region
 type RegionInfo struct {
-	Name      string   `json:"name"`
-	Slug      string   `json:"slug"`
-	Available bool     `json:"available"`
-	Country   string   `json:"country"`
-	State     string   `json:"State"`
-	Sizes     []string `json:"sizes"`
-	Features  []string `json:"features"`
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
+	Available bool   `json:"available"`
+	Country   string `json:"country"`
+	State     string `json:"State"`
+	// Sizes     []string `json:"sizes"`
+	// Features  []string `json:"features"`
 }
 
 // VMSizes allows callers to move from one size to another
-type VMSizes interface {
-	GetList() ([]SizeInfo, error)
-	GetInfo(size string) (SizeInfo, error)
-	GetLargerSize()
-	GetSmallerSize()
-}
+// type VMSizes interface {
+// 	GetList() ([]SizeInfo, error)
+// 	GetInfo(size string) (SizeInfo, error)
+// 	GetLargerSize()
+// 	GetSmallerSize()
+// }
 
 // SizeInfo has details about a specific VM size
 type SizeInfo struct {

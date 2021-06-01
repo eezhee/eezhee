@@ -1,13 +1,107 @@
 {
   "image" : "387", 
   "sizes" : {
-    "vc2-1c-1gb" : "1cpu1gb"
+    "vc2-1c-1gb" : "1cpu1gb",
+    "vc2-1c-2gb" : "1cpu2gb",
+    "vc2-2c-4gb" : "2cpu4gb",
+    "vc2-4c-8gb" : "4cpu8gb",
+    "vc2-6c-16gb": "6cpu16gb",
+    "vc2-8c-32gb" : "8cpu32gb"
   },
   "regions" : {
     "atl" : {
       "country" : "us",
+      "region" : "east",
       "state" : "georgia",
       "city" : "atlanta"
+    },
+    "mia" : {
+      "country" : "us",
+      "region" : "southeast",
+      "state" : "florida",
+      "city" : "miami"
+    },
+    "dfw" : {
+      "country" : "us",
+      "region" : "southcentral",
+      "state" : "texas",
+      "city" : "dallas"
+    },
+    "ewr" : {
+      "country" : "us",
+      "region" : "northeast",
+      "state" : "newjersey",
+      "city" : "newark"
+    },
+    "lax" : {
+      "country" : "us",
+      "region" : "southwest",
+      "state" : "california",
+      "city" : "losangeles"
+    },
+    "ord" : {
+      "country" : "us",
+      "region" : "northcentral",
+      "state" : "ohio",
+      "city" : "chicago"
+    },
+    "sea" : {
+      "country" : "us",
+      "region" : "northwest",
+      "state" : "washington",
+      "city" : "seattle"
+    },
+    "sjc" : {
+      "country" : "us",
+      "region" : "west",
+      "state" : "california",
+      "city" : "sanjose"
+    },
+    "yyz" : {
+      "country" : "ca",
+      "region" : "central",
+      "state" : "ontario",
+      "city" : "toronto"
+    },
+    "lhr" : {
+      "country" : "gb",
+      "region" : "south",
+      "city" : "london"
+    },
+    "ams" : {
+      "country" : "nl",
+      "city" : "amsterdam"
+    },
+    "cdg" : {
+      "region" : "north",
+      "country" : "fr",
+      "city" : "paris"
+    },
+    "fra" : {
+      "country" : "de",
+      "region" : "central",
+      "state" : "hesse",
+      "city" : "frankfurt"
+    },
+    "icn" : {
+      "country" : "kr",
+      "region" : "north",
+      "city" : "seoul"
+    },
+    "nrt" : {
+      "country" : "jp",
+      "region" : "central",
+      "city" : "tokyo"
+    },
+    "sgp" : {
+      "country" : "sg",
+      "city" : "singapore"
+    },
+    "syd" : {
+      "country" : "au",
+      "region" : "southeast",
+      "state" : "newsouthwales",
+      "city" : "sydney"
     }
   }
 }

@@ -367,9 +367,9 @@ func convertVMInfoToGenericFormat(dropletInfo godo.Droplet) (core.VMInfo, error)
 	vmInfo.VCPUs = dropletInfo.Vcpus
 	vmInfo.Disk = dropletInfo.Disk
 	vmInfo.Region = core.RegionInfo{
-		Name:     dropletInfo.Region.Name,
-		Slug:     dropletInfo.Region.Slug,
-		Features: dropletInfo.Region.Features,
+		Name: dropletInfo.Region.Name,
+		Slug: dropletInfo.Region.Slug,
+		// Features: dropletInfo.Region.Features,
 	}
 	// need to convert final status to standard format
 	if dropletInfo.Status == "active" {

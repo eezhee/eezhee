@@ -1,13 +1,70 @@
 {
   "image" : "linode/ubuntu20.04", 
   "sizes" : {
-    "g6-nanode-1" : "1cpu1gb"
+    "g6-nanode-1" : "1cpu1gb",
+    "g6-standard-1" : "1cpu2gb",
+    "g6-standard-2" : "2cpu4gb",
+    "g6-standard-4" : "4cpu8gb",
+    "g6-standard-6" : "6cpu16gb",
+    "g6-standard-8" : "8cpu32gb",
+    "g6-standard-16" : "16cpu64gb"
   },
   "regions" : {
     "us-central" : {
       "country" : "us",
+      "region" : "central",
       "state" : "texas",
       "city" : "dallas"
+    },
+    "us-west" : {
+      "country" : "us",
+      "region" : "west",
+      "state" : "california",
+      "city" : "fremont"
+    },
+    "us-east" : {
+      "country" : "us",
+      "region" : "east",
+      "state" : "newjersey",
+      "city" : "newark"
+    },
+    "ca-central" : {
+      "country" : "ca",
+      "region" : "central",
+      "state" : "ontario",
+      "city" : "toronto"
+    },
+    "eu-west" : {
+      "country" : "uk",
+      "state" : "london",
+      "city" : "london"
+    },
+    "eu-central" : {
+      "country" : "de",
+      "state" : "hesse",
+      "city" : "frankfurt"
+    },
+    "ap-west" : {
+      "country" : "in",
+      "region" : "central",
+      "state" : "Maharashtra",
+      "city" : "mumbai"
+    },
+    "ap-south" : {
+      "country" : "sg",
+      "city" : "singapore"
+    },
+    "ap-northeast" : {
+      "country" : "jp",
+      "state" : "",
+      "city" : "tokyo"
+    },
+    "ap-southeast" : {
+      "country" : "au",
+      "state" : "newsouthwales",
+      "city" : "sydney"
     }
+
+
   }
 }

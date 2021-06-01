@@ -17,6 +17,7 @@ type ProviderMapping struct {
 	Regions map[string]Location `json:"regions"`
 }
 
+// ParseProviderMappings reads in the JSON file that maps a provider services to Eezhee format
 func ParseProviderMappings(providerMappings []byte) (pm ProviderMapping, err error) {
 	err = json.Unmarshal([]byte(providerMappings), &pm)
 	return pm, err
