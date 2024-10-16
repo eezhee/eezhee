@@ -6,7 +6,7 @@ package github
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -290,7 +290,7 @@ func makeRepoReleasesRequest(apiURL string) (data []byte, headers http.Header, e
 	defer response.Body.Close()
 
 	// get relase data
-	data, err = ioutil.ReadAll(response.Body)
+	data, err = io.ReadAll(response.Body)
 	if err != nil {
 		return data, headers, err
 	}

@@ -3,7 +3,7 @@ package k3s
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -148,7 +148,7 @@ func (m *Manager) Install(ipAddress string, k3sVersion string, appName string) b
 	// save output to kubectrl config file
 	// TODO: option to merge?
 	absPath, _ := filepath.Abs("kubeconfig")
-	err = ioutil.WriteFile(absPath, []byte(kubectlConfig), 0600)
+	err = os.WriteFile(absPath, []byte(kubectlConfig), 0600)
 	if err != nil {
 		log.Error(err)
 		return false
@@ -185,7 +185,7 @@ func runCommand(conn *ssh.Client, command string) (outputStr string, err error) 
 func getSSHKey(keyFilename string, passphrase string) (signer ssh.Signer, err error) {
 
 	// load the private key
-	privateKey, err := ioutil.ReadFile(keyFilename)
+	privateKey, err := os.ReadFile(keyFilename)
 	if err != nil {
 		return nil, err
 	}

@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -17,7 +17,7 @@ func (l *LinodeImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "linode-images.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -87,7 +87,7 @@ func (l *LinodeImporter) ConvertProviderImageSizes() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "linode-types.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -157,7 +157,7 @@ func (l *LinodeImporter) ConvertProviderRegions() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "linode-regions.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -214,7 +214,7 @@ func (l *LinodeImporter) ConvertProviderRegions() bool {
 func (l *LinodeImporter) ReadMappings() bool {
 	// read in the data
 	filename := "./linode-mappings.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false

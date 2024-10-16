@@ -8,7 +8,7 @@ package k3s
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -114,7 +114,7 @@ func (ri *ReleaseInfo) LoadChannels() error {
 	defer response.Body.Close()
 
 	// get channel data
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}

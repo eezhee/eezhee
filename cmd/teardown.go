@@ -68,7 +68,9 @@ func teardownVM() error {
 	// https://github.com/go-delve/delve/issues/1274
 	response := ""
 	fmt.Printf("are you sure you want to delete %s cluster (Y/n)? ", deployStateFile.Name)
-	fmt.Scanln(&response)
+	if _, err := fmt.Scanln(&response); err != nil {
+		return err
+	}
 	response = strings.ToLower(response)
 	if (response != "") && (response != "y") {
 		return errors.New("deletion aborted")
