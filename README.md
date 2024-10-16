@@ -2,13 +2,13 @@
 
 A super fast and easy way to create a k3s based kubernetes cluster on a variety of public clouds.  Currently DigitalOcean, Linode and Vultr are supported.  All it takes is a single command and about 2 minutes and your cluster is ready to use.  Most of the time is taken by the cloud provider bring up the base VM. Eezhee is ideal for development, testing or learning about Kubernetes.
 
-What Eezhee does it combine the creation of a VM on the given provider and the installation of kubernetes.  It also does things like auto discover which is the closest region and what is the current stable version of kubernetes.  While you can just issue the `build` command and get a working cluster, you can also customize the cluster using a simple deploy file.  This allows you to specify which region or what version of kubernetes to install. 
+What Eezhee does it combine the creation of a VM on the given provider and the installation of kubernetes.  It also does things like auto discover which is the closest region and what is the current stable version of kubernetes.  While you can just issue the `build` command and get a working cluster, you can also customize the cluster using a simple deploy file.  This allows you to specify which region or what version of kubernetes to install.
 
-This is early days for Eezhee.  There is lots more functionality I'd like to add.  See the `roadmap` below for details 
+This is early days for Eezhee.  There is lots more functionality I'd like to add.  See the `roadmap` below for details
 
 ## Installation
 
-Eezhee is written in Go so can be run on MacOS, Linux and Windows.  Currently most testing has been done on an x86 MacOS with just basic testing on the other OSs.  Please report any issues found with the other OSs. 
+Eezhee is written in Go so can be run on MacOS, Linux and Windows.  Currently most testing has been done on an x86 MacOS with just basic testing on the other OSs.  Please report any issues found with the other OSs.
 
 On MacOS, the easiest way to install eezhee is with brew.
 
@@ -92,7 +92,7 @@ Create a `deploy.yaml` file if you want to customize how the cluster is built.  
 
 Currently you can set:
 
-- `name`:  What you name your cluster. This will also be the kubectl context name. 
+- `name`:  What you name your cluster. This will also be the kubectl context name.
 - `cloud`: Which provider to use.  This is only necessary if you have configured Eezhee to work with several providers
 - `region`:  Defaults to the closest region.  You can set it to any of the providers regions. Note, right now regions name as provider specific but this is likely to change in the future as Eezhee config files should be provider agnostic.  
 - `k3s-version`: Which version of Kubernetes to install.  It must be one reported with the `k3s_version` command.  Options include `stable`, `latest`, a channel (ie `v1.20`) or a specific version (ie `v1.20.3`)
