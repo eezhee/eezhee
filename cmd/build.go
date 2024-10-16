@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -319,7 +318,7 @@ func LoadSSHPublicKey() {
 
 	dir, _ := homedir.Dir()
 	keyFile := dir + "/.ssh/id_rsa.pub"
-	data, err := ioutil.ReadFile(keyFile)
+	data, err := os.ReadFile(keyFile)
 	if err != nil {
 		return
 	}

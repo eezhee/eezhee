@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -19,7 +19,7 @@ func (do *DigitalOceanImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "digitalocean-images.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -78,7 +78,7 @@ func (do *DigitalOceanImporter) ConvertProviderImageSizes() bool {
 
 	// read in the raw data
 	filename := DATA_PATH + "digitalocean-sizes.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -139,7 +139,7 @@ func (do *DigitalOceanImporter) ConvertProviderRegions() bool {
 
 	// read in the raw data
 	filename := DATA_PATH + "digitalocean-regions.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -190,7 +190,7 @@ func (do *DigitalOceanImporter) ReadMappings() bool {
 
 	// read in the data
 	filename := "./digitalocean-mappings.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false

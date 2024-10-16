@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 type VultrImporter struct {
@@ -16,7 +16,7 @@ func (v *VultrImporter) FindUbuntuImages() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "vultr-os.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -69,7 +69,7 @@ func (v *VultrImporter) ConvertProviderImageSizes() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "vultr-plans.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -126,7 +126,7 @@ func (v *VultrImporter) ConvertProviderRegions() bool {
 
 	// read in the yaml
 	filename := DATA_PATH + "vultr-regions.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false
@@ -181,7 +181,7 @@ func (v *VultrImporter) ConvertProviderRegions() bool {
 func (v *VultrImporter) ReadMappings() bool {
 	// read in the data
 	filename := "./vultr-mappings.json"
-	jsonFile, err := ioutil.ReadFile(filename)
+	jsonFile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("jsonFile.Readfile error: #%v ", err)
 		return false

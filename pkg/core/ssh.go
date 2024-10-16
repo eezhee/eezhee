@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -27,14 +26,14 @@ func (s *SSHKey) LoadPublicKey(filename string) error {
 		return errors.New("no filename specified for ssh key")
 	}
 
-	data, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
 	// publicKeyStr := string(data)
 	// log.Debug(publicKeyStr)
 
-	s.PublicKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(data))
+	s.PublicKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(content))
 	if err != nil {
 		panic(err)
 	}
@@ -114,5 +113,10 @@ func (s *SSHKey) GenerateNewKey(publicKeyPath string) error {
 	publicKeyString := ssh.MarshalAuthorizedKey(pub)
 	publicKeyString = bytes.TrimSuffix(publicKeyString, []byte("\n"))
 	publicKeyString = append(publicKeyString, []byte(" eezhee\n")...)
-	return ioutil.WriteFile(publicKeyPath, publicKeyString, 0644)
+	err = os.WriteFile(publicKeyPath, publicKeyString, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
