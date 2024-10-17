@@ -226,7 +226,7 @@ func (m *Manager) GetVMInfo(vmID string) (vmInfo core.VMInfo, err error) {
 		Name: server.Os,
 	}
 	vmInfo.CreatedAt = server.DateCreated
-	vmInfo.Tags = append(vmInfo.Tags, server.Tag)
+	vmInfo.Tags = server.Tags
 
 	// only status that needs to be standardized is final one that server is up
 	// at vultr that is "ok"
@@ -281,10 +281,6 @@ func (m *Manager) CreateVM(name string, image string, size string, region string
 
 	// transfer data to vmInfo
 	vmInfo.ID = server.ID
-	if err != nil {
-		return vmInfo, err
-	}
-
 	return vmInfo, nil
 }
 
@@ -296,8 +292,8 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 		return vmInfo, err
 	}
 	for _, instance := range instances {
-		if len(instance.Tag) > 0 {
-			if strings.Compare(instance.Tag, "eezhee") == 0 {
+		if len(instance.Tags) > 0 {
+			if contains(instance.Tags, "eezhee") {
 				// we created this VM
 				info, _ := convertVMInfoToGenericFormat(instance)
 				vmInfo = append(vmInfo, info)
@@ -307,6 +303,16 @@ func (m *Manager) ListVMs() (vmInfo []core.VMInfo, err error) {
 		log.Debug(instance.ID, " ", instance.Status, " ", instance.Region, " ", instance.MainIP)
 	}
 	return vmInfo, nil
+}
+
+// contains checks if a string slice contains a specific string
+func contains(slice []string, str string) bool {
+	for _, v := range slice {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }
 
 // convertVMInfoToGenericFormat cloud vendor info into our generic format
@@ -356,7 +362,7 @@ func convertVMInfoToGenericFormat(instance govultr.Instance) (core.VMInfo, error
 	}
 	vmInfo.Networks.V6Info = append(vmInfo.Networks.V6Info, v6NetworkInfo)
 
-	vmInfo.Tags = []string{instance.Tag}
+	vmInfo.Tags = instance.Tags
 
 	return vmInfo, nil
 }
