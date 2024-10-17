@@ -85,7 +85,7 @@ func teardownVM() error {
 
 	// remove the kubeconfig file
 	kubeConfigFile, _ := filepath.Abs("kubeconfig")
-	_ = os.Remove(kubeConfigFile)
+	err = os.Remove(kubeConfigFile)
 	if err == nil {
 		log.Debug("removed kubeconfig for cluster")
 	}
