@@ -1,6 +1,7 @@
 package cloudflare
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -113,8 +114,8 @@ func (m *DNSManager) GetHostRecord(hostname string) (*core.HostInfo, error) {
 	}
 
 	// get a specific record
-	desiredRec := cf.DNSRecord{Name: hostname, Type: "A"}
-	recs, err := m.api.DNSRecords(zoneID, desiredRec)
+	// desiredRec := cf.DNSRecord{Name: hostname, Type: "A"}
+	recs, _, err := m.api.ListDNSRecords(context.Background(), cf.ZoneIdentifier(zoneID), cf.ListDNSRecordsParams{Name: hostname, Type: "A"})
 	if err != nil {
 		// problem making request
 		return nil, err
@@ -146,9 +147,13 @@ func (m *DNSManager) AddHostRecord(hostInfo core.HostInfo) error {
 	newRec.Content = hostInfo.IP
 	newRec.Type = "A"
 
-	dnsResponse, err := m.api.CreateDNSRecord(zoneID, newRec)
+	dnsResponse, err := m.api.CreateDNSRecord(context.Background(), cf.ZoneIdentifier(zoneID), cf.CreateDNSRecordParams{
+		Type:    newRec.Type,
+		Name:    newRec.Name,
+		Content: newRec.Content,
+	})
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Failed to create DNS record:", err)
 		return err
 	}
 	log.Debug(dnsResponse)
@@ -165,11 +170,15 @@ func (m *DNSManager) UpdateHostRecord(hostInfo core.HostInfo) error {
 		return err
 	}
 
-	// delete the record (so we can update it)
-	newRec := cf.DNSRecord{Name: hostInfo.Name, Content: hostInfo.IP, Type: "A"}
-	err = m.api.UpdateDNSRecord(zoneID, hostInfo.ID, newRec)
+	// update the DNS record
+	updateParams := cf.UpdateDNSRecordParams{
+		Type:    "A",
+		Name:    hostInfo.Name,
+		Content: hostInfo.IP,
+	}
+	_, err = m.api.UpdateDNSRecord(context.Background(), cf.ZoneIdentifier(zoneID), updateParams)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Failed to update DNS record:", err)
 		return err
 	}
 
@@ -184,9 +193,8 @@ func (m *DNSManager) DeleteHostRecord(hostInfo core.HostInfo) error {
 	if err != nil {
 		return err
 	}
-
 	// ready to delete the record
-	err = m.api.DeleteDNSRecord(zoneID, hostInfo.ID)
+	err = m.api.DeleteDNSRecord(context.Background(), cf.ZoneIdentifier(zoneID), hostInfo.ID)
 	if err != nil {
 		return err
 	}
